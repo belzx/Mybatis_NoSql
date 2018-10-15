@@ -45,7 +45,7 @@ public interface CustomService<Po extends CustomEntity, Pk> {
         return result;
     }
 
-    default Po insert(Po entity) {
+    default int insert(Po entity) {
         return getMapper().insert((Po)entity);
     }
 

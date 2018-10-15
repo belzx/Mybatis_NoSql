@@ -31,7 +31,7 @@ public class EasyOrmSqlBuilder {
 
     protected static final Map<String, String> maps_insert_field = new HashMap<>();
 
-    protected static final Map<String, String> maps_insert_content= new HashMap<>();
+    protected static final Map<String, String> maps_insert_content = new HashMap<>();
 
     private EasyOrmSqlBuilder() {
     }
@@ -87,7 +87,7 @@ public class EasyOrmSqlBuilder {
             insertField.append(d.getColumn());
             insertContent.append("#{t_parameter." + d.getProperty() + "}");
         });
-        maps_insert_field.put(key,insertField.toString());
+        maps_insert_field.put(key, insertField.toString());
         maps_insert_content.put(key, insertContent.toString());
 
 
@@ -112,7 +112,7 @@ public class EasyOrmSqlBuilder {
      * @param customParams
      * @return
      */
-    public static final String baseSqlWhere = "%s = #{t_parameter.params.%s,jdbcType=%s}";
+    public static final String BASESQLWHERE = "%s = #{t_parameter.params.%s,jdbcType=%s}";
 
     public String buildWhere(String resultMapId, String tableName, CURDParam CURDParam) {
         if (!CURDParam.isWHERE()) return "";
@@ -123,7 +123,16 @@ public class EasyOrmSqlBuilder {
             if (where.length() != 0) {
                 where.append(" AND ");
             }
-            where.append(String.format(baseSqlWhere, resultMappingMaps.get(d.getKey()).getColumn(), d.getKey(), resultMappingMaps.get(d.getKey()).getJdbcType()));
+            ResultMapping resultMapping = resultMappingMaps.get(d.getKey());
+            if (resultMapping == null) {
+                if (CURDParam.isORIGINALSQL()) {
+                    where.append(d.getKey() + " = '" + d.getValue().toString()+"'");
+                } else {
+                    throw new IllegalArgumentException("非法参数,没有表明为原生参数也不存在mapping中：" + d);
+                }
+            } else {
+                where.append(String.format(BASESQLWHERE, resultMapping.getColumn(), d.getKey(), resultMapping.getJdbcType()));
+            }
         });
         return where.toString();
     }
@@ -185,7 +194,15 @@ public class EasyOrmSqlBuilder {
                 if (s1.length() != 9) {
                     s1.append(",");
                 }
-                s1.append(" ").append(resultMappingMaps.get(d).getColumn());
+                if (resultMappingMaps.get(d) == null) {
+                    if (CURDParam.isORIGINALSQL()) {
+                        s1.append(" ").append(d);
+                    } else {
+                        throw new IllegalArgumentException("非法参数,没有表明为原生参数也不存在mapping中：" + d);
+                    }
+                } else {
+                    s1.append(" ").append(resultMappingMaps.get(d).getColumn());
+                }
             });
             sb.append(s1.toString()).append(" ");
         }
@@ -195,7 +212,16 @@ public class EasyOrmSqlBuilder {
                 if (s1.length() != 9) {
                     s1.append(",");
                 }
-                s1.append(" ").append(resultMappingMaps.get(d.getKey()).getColumn()).append(" ").append(d.getValue());
+                if (resultMappingMaps.get(d.getKey()) == null) {
+                    if (CURDParam.isORIGINALSQL()) {
+                        s1.append(" ").append(d.getKey()).append(" ").append(d.getValue());
+
+                    } else {
+                        throw new IllegalArgumentException("非法参数,没有表明为原生参数也不存在mapping中：" + d);
+                    }
+                } else {
+                    s1.append(" ").append(resultMappingMaps.get(d.getKey()).getColumn()).append(" ").append(d.getValue());
+                }
             });
             sb.append(s1.toString()).append(" ");
         }

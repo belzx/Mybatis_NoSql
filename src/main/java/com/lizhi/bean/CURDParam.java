@@ -11,15 +11,19 @@ public class CURDParam<T extends CustomEntity> {
     /**包含的属性，用位运算判断*/
     private int type = NONE;
 
-    private static int NONE = 0x0;
+    private static int NONE = 0x1;
 
-    private static int SORT = 0x1;
+    private static int SORT = 0x2;
 
-    private static int WHERE = 0x2;
+    private static int WHERE = 0x4;
 
-    private static int GROUP = 0x4;
+    private static int GROUP = 0x8;
 
-    private static int LIMIT = 0x8;
+    private static int LIMIT = 0x10;
+
+    //是否为原始的sql语句
+    //当在params中使用了类似DATE_FORMMATE的字段时，不会被过滤掉
+    private static int ORIGINALSQL = 0x20;
 
     private Map<String, Object> params;//where字段的参数
 
@@ -46,35 +50,33 @@ public class CURDParam<T extends CustomEntity> {
 
     public CURDParam where(String column, Object parma) {
         if (params == null) {
-            type += WHERE;
             params = new HashMap<>();
         }
+        type = type | WHERE;
         params.put(column, parma);
         return this;
     }
 
     public CURDParam sort(String column, String desc) {
         if (sorts == null) {
-            type += SORT;
             sorts = new LinkedHashMap<>();
         }
+        type = type | SORT;
         sorts.put(column, desc);
         return this;
     }
 
     public CURDParam group(String column) {
         if (groups == null) {
-            type += GROUP;
             groups = new LinkedList();
         }
+        type = type |GROUP;
         groups.add(column);
         return this;
     }
 
     public CURDParam limit(int skip, int len) {
-        if (limit == null) {
-            type += LIMIT;
-        }
+        type = type | LIMIT;
         limit = new CustomParamsLimit(skip, len);
         return this;
     }
@@ -97,6 +99,10 @@ public class CURDParam<T extends CustomEntity> {
 
     public boolean isSORT() {
         return !((type & SORT) == 0);
+    }
+
+    public boolean isORIGINALSQL(){
+        return !((type & ORIGINALSQL) == 0);
     }
 
     public boolean isGROUP() {
@@ -130,37 +136,31 @@ public class CURDParam<T extends CustomEntity> {
     }
 
     public void setParams(Map<String, Object> params) {
-        if (params == null) {
-            type += WHERE;
-        }
+        type  =type | WHERE;
         this.params = params;
     }
 
     public void setSorts(Map<String, String> sorts) {
-        if (this.sorts == null) {
-            type += SORT;
-        }
+        type = type | SORT;
         this.sorts = sorts;
     }
 
     public void setGroups(List<String> groups) {
-        if (this.groups == null) {
-            type += GROUP;
-        }
+        type = type | GROUP;
         this.groups = groups;
     }
 
     public void setPageNumber(int pageNumber) {
-        if (limit == null) {
-            type += LIMIT;
-        }
+        type = type | LIMIT;
         this.pageNumber = pageNumber;
     }
 
     public void setPageSize(int pageSize) {
-        if (limit == null) {
-            type += LIMIT;
-        }
+        type = type | LIMIT;
         this.pageSize = pageSize;
+    }
+
+    public  void setOriginalsql() {
+        type = type | ORIGINALSQL;
     }
 }

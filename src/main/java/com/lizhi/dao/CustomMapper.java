@@ -9,7 +9,7 @@ import java.util.List;
 public interface CustomMapper<Po extends CustomEntity, Pk> {
     //param名称必须与参数名一致，若不一致，ognl调用方法时会抛错
 
-    Po insert(@Param("t_parameter") Po t_parameter);
+    int insert(@Param("t_parameter") Po t_parameter);
 
     List<Po> batchInsert(@Param("t_parameters") List<Po> t_parameters);
 
