@@ -5,19 +5,19 @@
 //
 //import java.util.List;
 //
-//public interface CURDService <Po extends CustomEntity,Pk > {
+//public interface CURDService <Po extends CustomEntity,PK > {
 //
 //    Po insert( Po po);
 //
-//    int deleteByPk(Pk id);
+//    int deleteByPK(PK id);
 //
 //    int delete(CURDParam param);
 //
 //    int update(CURDParam param);
 //
-//    Po selectByPk(Pk id);
+//    Po selectByPK(PK id);
 //
-//    List<Po> selectByPk(List<Pk> ids);
+//    List<Po> selectByPK(List<PK> ids);
 //
 //    List<Po> query(CURDParam param);
 //

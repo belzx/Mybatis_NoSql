@@ -6,34 +6,42 @@
 <mapper namespace="BasicMapper">
     <!--通用查询条件-->
     <sql id="buildWhere">
-        ${@com.lizhi.builder.SqlBuilder@current().buildWhere(resultMapId,tableName,#this['t_parameter'])}
+        ${@com.lizhi.builder.SqlBuilder@current().buildWhere(resultMapId,#this['t_parameter'])}
     </sql>
 
     <!--生成查询字段-->
     <sql id="buildSelectField">
-        ${@com.lizhi.builder.SqlBuilder@current().buildSelectFields(resultMapId,tableName,#this['t_parameter'])}
+        ${@com.lizhi.builder.SqlBuilder@current().buildSelectFields(resultMapId,#this['t_parameter'])}
     </sql>
 
     <!--生成修改字段-->
     <sql id="buildUpdateField">
         <set>
-            ${@com.lizhi.builder.SqlBuilder@current().buildUpdateFields(resultMapId,tableName,#this['t_parameter'])}
+            ${@com.lizhi.builder.SqlBuilder@current().buildUpdateFields(resultMapId,#this['t_parameter'])}
         </set>
     </sql>
 
     <!--生成后续状态字段 group by  order by  limit -->
-    <sql id="buildConditionField">
-        ${@com.lizhi.builder.SqlBuilder@current().buildConditionField(resultMapId,tableName,#this['t_parameter'])}
+    <sql id="buildGroupField">
+        ${@com.lizhi.builder.SqlBuilder@current().buildGroupField(resultMapId,#this['t_parameter'])}
+    </sql>
+
+    <sql id="buildSortField">
+        ${@com.lizhi.builder.SqlBuilder@current().buildSortField(resultMapId,#this['t_parameter'])}
+    </sql>
+
+    <sql id="buildLimitField">
+        ${@com.lizhi.builder.SqlBuilder@current().buildLimitField(resultMapId,#this['t_parameter'])}
     </sql>
 
     <!--生成insert的字段 -->
     <sql id="buildInsertField">
-        ${@com.lizhi.builder.SqlBuilder@current().buildInsertField(resultMapId,tableName)}
+        ${@com.lizhi.builder.SqlBuilder@current().buildInsertField(resultMapId)}
     </sql>
 
     <!--生成insert的内容 -->
     <sql id="buildInsertContent">
-        ${@com.lizhi.builder.SqlBuilder@current().buildInsertContent(resultMapId,tableName)}
+        ${@com.lizhi.builder.SqlBuilder@current().buildInsertContent(resultMapId)}
     </sql>
 
 
@@ -46,7 +54,9 @@
             <where>
                 <include refid="BasicMapper.buildWhere"/>
             </where>
-            <include refid="BasicMapper.buildConditionField"/>
+            <include refid="BasicMapper.buildGroupField"/>
+            <include refid="BasicMapper.buildSortField"/>
+            <include refid="BasicMapper.buildLimitField"/>
         </trim>
     </sql>
 
@@ -99,6 +109,7 @@
             <where>
                 <include refid="BasicMapper.buildWhere"/>
             </where>
+            <include refid="BasicMapper.buildGroupField"/>
         </trim>
     </sql>
 </mapper>

@@ -2,6 +2,7 @@ package com.lizhi.builder;
 
 
 import com.lizhi.bean.CURDParam;
+import com.lizhi.bean.CustomParam;
 import org.apache.ibatis.mapping.ResultMapping;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.springframework.util.StringUtils;
@@ -55,15 +56,14 @@ public class EasyOrmSqlBuilder {
      * 初始化语句，一些固定的值
      *
      * @param resultMapId
-     * @param tableName
      */
-    public void initResultMap(String resultMapId, String tableName) {
-        String key = tableName.concat("-").concat(resultMapId);
+    public void initResultMap(String resultMapId) {
+
         /**获取resultMapId的list ResultMapping*/
         List<ResultMapping> resultMapping = getSqlSession().getConfiguration().getResultMap(resultMapId).getResultMappings();
 
         /**初始化key（属性名-属性）*/
-        mpas_property_resultMapping.put(key, resultMapping.stream().collect(Collectors.toMap(ResultMapping::getProperty, d -> d)));
+        mpas_property_resultMapping.put(resultMapId, resultMapping.stream().collect(Collectors.toMap(ResultMapping::getProperty, d -> d)));
 
         /**初始化select固定的字符串*/
         StringBuilder selectField = new StringBuilder();
@@ -73,7 +73,7 @@ public class EasyOrmSqlBuilder {
             }
             selectField.append(d.getColumn()).append(" AS ").append(d.getProperty());
         });
-        maps_selectfiled.put(key, selectField.toString());
+        maps_selectfiled.put(resultMapId, selectField.toString());
 
         /**初始化insert固定的字段*/
         /**初始化batchinsert固定的内容*/
@@ -87,8 +87,8 @@ public class EasyOrmSqlBuilder {
             insertField.append(d.getColumn());
             insertContent.append("#{t_parameter." + d.getProperty() + "}");
         });
-        maps_insert_field.put(key, insertField.toString());
-        maps_insert_content.put(key, insertContent.toString());
+        maps_insert_field.put(resultMapId, insertField.toString());
+        maps_insert_content.put(resultMapId, insertContent.toString());
 
 
         /**初始化update固定的字符串*/
@@ -99,7 +99,7 @@ public class EasyOrmSqlBuilder {
             }
             updateField.append(String.format(UPDATE_SQL, d.getColumn(), d.getProperty()));
         });
-        maps_updatefiled.put(key, updateField.toString());
+        maps_updatefiled.put(resultMapId, updateField.toString());
     }
 
 
@@ -112,28 +112,32 @@ public class EasyOrmSqlBuilder {
      * @param customParams
      * @return
      */
-    public static final String BASESQLWHERE = "%s = #{t_parameter.params.%s,jdbcType=%s}";
 
-    public String buildWhere(String resultMapId, String tableName, CURDParam CURDParam) {
-        if (!CURDParam.isWHERE()) return "";
+    public static final String BASESQLWHERE = "%s = #{t_parameter.params.%s.value,jdbcType=%s}";
+    public String buildWhere(String resultMapId, CURDParam CURDParam) {
+        if (CURDParam.getParams() == null || CURDParam.getParams().isEmpty()) return "";
 
-        final Map<String, ResultMapping> resultMappingMaps = getResultMapping(resultMapId, tableName);
+        final Map<String, ResultMapping> resultMappingMaps = getResultMapping(resultMapId);
+
         final StringBuilder where = new StringBuilder();
-        ((Map<String, Object>) CURDParam.getParams()).entrySet().forEach(d -> {
-            if (where.length() != 0) {
-                where.append(" AND ");
+//        ArrayList<CustomParam> values = new ArrayList(CURDParam.getParams().values());
+//        ArrayList<CustomParam> values = new ArrayList(CURDParam.getParams().values());
+        Set<Map.Entry<Integer,CustomParam>> entrys = CURDParam.getParams().entrySet();
+        for(Map.Entry<Integer,CustomParam> entry : entrys){
+            CustomParam param = entry.getValue();
+
+            if (where.length() != 0) where.append(param.getLink());
+
+            if(param.isOriginalSql()){
+                where.append(param.getColumn() + param.getSymbol()+"'" + param.getValue()+"'");
+                continue;
             }
-            ResultMapping resultMapping = resultMappingMaps.get(d.getKey());
-            if (resultMapping == null) {
-                if (CURDParam.isORIGINALSQL()) {
-                    where.append(d.getKey() + " = '" + d.getValue().toString()+"'");
-                } else {
-                    throw new IllegalArgumentException("非法参数,没有表明为原生参数也不存在mapping中：" + d);
-                }
-            } else {
-                where.append(String.format(BASESQLWHERE, resultMapping.getColumn(), d.getKey(), resultMapping.getJdbcType()));
-            }
-        });
+
+            ResultMapping resultMapping = resultMappingMaps.get(param.getColumn());
+            if(resultMapping == null)
+                throw new IllegalArgumentException("使用了非法的参数：" + param.getColumn());
+            where.append(String.format(BASESQLWHERE, resultMapping.getColumn(),entry.getKey(), resultMapping.getJdbcType()));
+        }
         return where.toString();
     }
 
@@ -142,16 +146,14 @@ public class EasyOrmSqlBuilder {
      * P_NAME=#{t_parameter.updateObject.name},P_PASSWORD=#{password}
      *
      * @param resultMapId
-     * @param tableName
      * @param CURDParam
      * @return
      */
-    public String buildUpdateFields(String resultMapId, String tableName, CURDParam CURDParam) {
-        String key = tableName.concat("-").concat(resultMapId);
-        String updatePro = maps_updatefiled.get(key);
+    public String buildUpdateFields(String resultMapId, CURDParam CURDParam) {
+        String updatePro = maps_updatefiled.get(resultMapId);
         if (StringUtils.isEmpty(updatePro)) {
-            initResultMap(resultMapId, tableName);
-            updatePro = maps_updatefiled.get(key);
+            initResultMap(resultMapId);
+            updatePro = maps_updatefiled.get(resultMapId);
         }
         return updatePro;
     }
@@ -161,102 +163,126 @@ public class EasyOrmSqlBuilder {
      * id as id，inickName as inickName 。。。
      *
      * @param resultMapId
-     * @param tableName
      * @param CURDParam
      * @return
      */
-    public String buildSelectFields(String resultMapId, String tableName, CURDParam CURDParam) {
-        String key = tableName.concat("-").concat(resultMapId);
-        String selectPro = maps_selectfiled.get(key);
+    public String buildSelectFields(String resultMapId, CURDParam CURDParam) {
+        String selectPro = maps_selectfiled.get(resultMapId);
         if (StringUtils.isEmpty(selectPro)) {
-            initResultMap(resultMapId, tableName);
-            selectPro = maps_selectfiled.get(key);
+            initResultMap(resultMapId);
+            selectPro = maps_selectfiled.get(resultMapId);
         }
         return selectPro;
     }
 
-    /**
-     * group by name1 ,name2
-     * order by name1 desc ,name2 adc
-     * limit 0 ,10
-     *
-     * @param resultMapId
-     * @param tableName
-     * @param CURDParam
-     * @return
-     */
-    public String buildConditionField(String resultMapId, String tableName, CURDParam CURDParam) {
+    public String buildGroupField(String resultMapId, CURDParam CURDParam) {
         StringBuilder sb = new StringBuilder();
-        final Map<String, ResultMapping> resultMappingMaps = getResultMapping(resultMapId, tableName);
-        if (CURDParam.isGROUP()) {
+        final Map<String, ResultMapping> resultMappingMaps = getResultMapping(resultMapId);
+        if (CURDParam.getGroups()!= null && !CURDParam.getGroups().isEmpty()) {
             StringBuilder s1 = new StringBuilder("GROUP BY ");
-            ((List<String>) CURDParam.getGroups()).forEach(d -> {
-                if (s1.length() != 9) {
+            ArrayList<CustomParam> groups = new ArrayList(CURDParam.getGroups().values());
+            for(CustomParam param : groups){
+                if (!"GROUP BY ".equals(s1.toString())) {
                     s1.append(",");
                 }
-                if (resultMappingMaps.get(d) == null) {
-                    if (CURDParam.isORIGINALSQL()) {
-                        s1.append(" ").append(d);
-                    } else {
-                        throw new IllegalArgumentException("非法参数,没有表明为原生参数也不存在mapping中：" + d);
-                    }
-                } else {
-                    s1.append(" ").append(resultMappingMaps.get(d).getColumn());
-                }
-            });
-            sb.append(s1.toString()).append(" ");
-        }
-        if (CURDParam.isSORT()) {
-            StringBuilder s1 = new StringBuilder("ORDER BY ");
-            ((Map<String, String>) CURDParam.getSorts()).entrySet().forEach(d -> {
-                if (s1.length() != 9) {
-                    s1.append(",");
-                }
-                if (resultMappingMaps.get(d.getKey()) == null) {
-                    if (CURDParam.isORIGINALSQL()) {
-                        s1.append(" ").append(d.getKey()).append(" ").append(d.getValue());
 
-                    } else {
-                        throw new IllegalArgumentException("非法参数,没有表明为原生参数也不存在mapping中：" + d);
-                    }
-                } else {
-                    s1.append(" ").append(resultMappingMaps.get(d.getKey()).getColumn()).append(" ").append(d.getValue());
+                if(param.isOriginalSql()){
+                    s1.append(param.getValue());
+                    continue;
                 }
-            });
-            sb.append(s1.toString()).append(" ");
-        }
-        if (CURDParam.isLIMIT()) {
-            sb.append("LIMIT " + CURDParam.getLimit()).append(" ");
+
+                ResultMapping resultMapping = resultMappingMaps.get(param.getColumn());
+                if(resultMapping == null){
+                    throw new IllegalArgumentException("参数"+param.getColumn()+",不存在于resultMapId:{"+resultMapId+"}的配置文件中" );
+                }
+
+                s1.append(resultMapping.getColumn());
+            }
+            sb.append(s1.toString()).append("\n");
         }
         return sb.toString();
     }
 
-    public String buildInsertField(String resultMapId, String tableName) {
-        String key = tableName.concat("-").concat(resultMapId);
-        String field = maps_insert_field.get(key);
+    public String buildSortField(String resultMapId, CURDParam CURDParam) {
+        StringBuilder sb = new StringBuilder();
+        final Map<String, ResultMapping> resultMappingMaps = getResultMapping(resultMapId);
+        if (CURDParam.getSorts()!= null &&!CURDParam.getSorts().isEmpty()) {
+            StringBuilder s1 = new StringBuilder("ORDER BY ");
+            ArrayList<CustomParam> sorts = new ArrayList(CURDParam.getSorts().values());
+            for(CustomParam param : sorts){
+                if (!"ORDER BY ".equals(s1.toString())) {
+                    s1.append(",");
+                }
+
+                if(param.isOriginalSql()){
+                    s1.append(param.getValue());
+                    continue;
+                }
+
+                ResultMapping resultMapping = resultMappingMaps.get(param.getColumn());
+                if(resultMapping == null)
+                    throw new IllegalArgumentException("使用了非法的参数：" + param.getColumn());
+
+                s1.append(resultMapping.getColumn()).append(" ").append(param.getValue());
+            }
+            sb.append(s1.toString()).append("\n");
+        }
+        return sb.toString();
+    }
+
+    public String buildLimitField(String resultMapId, CURDParam CURDParam) {
+        StringBuilder sb = new StringBuilder();
+        final Map<String, ResultMapping> resultMappingMaps = getResultMapping(resultMapId);
+        if (!(CURDParam.getPageNumber() == 0 && CURDParam.getPageSize() == 0)) {
+            sb.append("LIMIT " + CURDParam.getPageNumber()).append(",").append(CURDParam.getPageSize());
+        }
+        return sb.toString();
+    }
+//    /**
+//     * group by name1 ,name2
+//     * order by name1 desc ,name2 adc
+//     * limit 0 ,10
+//     *
+//     * @param resultMapId
+//     * @param CURDParam
+//     * @return
+//     */
+//    public String buildConditionField(String resultMapId, CURDParam CURDParam) {
+//        StringBuilder sb = new StringBuilder();
+//        final Map<String, ResultMapping> resultMappingMaps = getResultMapping(resultMapId);
+//
+//
+//
+//        if (!(CURDParam.getPageNumber() == 0 && CURDParam.getPageSize() == 0)) {
+//            sb.append("LIMIT " + CURDParam.getPageNumber()).append(",").append(CURDParam.getPageSize());
+//        }
+//
+//        return sb.toString();
+//    }
+
+    public String buildInsertField(String resultMapId) {
+        String field = maps_insert_field.get(resultMapId);
         if (StringUtils.isEmpty(field)) {
-            initResultMap(resultMapId, tableName);
-            field = maps_insert_field.get(key);
+            initResultMap(resultMapId);
+            field = maps_insert_field.get(resultMapId);
         }
         return field;
     }
 
-    public String buildInsertContent(String resultMapId, String tableName) {
-        String key = tableName.concat("-").concat(resultMapId);
-        String content = maps_insert_content.get(key);
+    public String buildInsertContent(String resultMapId) {
+        String content = maps_insert_content.get(resultMapId);
         if (StringUtils.isEmpty(content)) {
-            initResultMap(resultMapId, tableName);
-            content = maps_insert_content.get(key);
+            initResultMap(resultMapId);
+            content = maps_insert_content.get(resultMapId);
         }
         return content;
     }
 
-    public Map<String, ResultMapping> getResultMapping(String resultMapId, String tableName) {
-        String key = tableName.concat("-").concat(resultMapId);
-        Map<String, ResultMapping> maps = mpas_property_resultMapping.get(key);
+    public Map<String, ResultMapping> getResultMapping(String resultMapId) {
+        Map<String, ResultMapping> maps = mpas_property_resultMapping.get(resultMapId);
         if (maps == null) {
-            initResultMap(resultMapId, tableName);
-            maps = mpas_property_resultMapping.get(key);
+            initResultMap(resultMapId);
+            maps = mpas_property_resultMapping.get(resultMapId);
         }
         return maps;
     }

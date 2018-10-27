@@ -8,159 +8,125 @@ import java.util.*;
  */
 public class CURDParam<T extends CustomEntity> {
 
-    /**包含的属性，用位运算判断*/
-    private int type = NONE;
+    //key只能为string
+    private Map<String, CustomParam> params;//where字段的参数
 
-    private static int NONE = 0x1;
+    private Map<String, CustomParam> sorts;//order by的参数
 
-    private static int SORT = 0x2;
-
-    private static int WHERE = 0x4;
-
-    private static int GROUP = 0x8;
-
-    private static int LIMIT = 0x10;
-
-    //是否为原始的sql语句
-    //当在params中使用了类似DATE_FORMMATE的字段时，不会被过滤掉
-    private static int ORIGINALSQL = 0x20;
-
-    private Map<String, Object> params;//where字段的参数
-
-    private Map<String, String> sorts;//order by的参数
-
-    private List<String> groups;//group by的参数
+    private Map<String, CustomParam> groups;//order by的参数
 
     private T updateObject;//单个更新
 
-    private CustomParamsLimit limit;
+    private int pageNumber = 0;//页数，从0开始
 
-    private int pageNumber;//页数，从0开始
+    private int pageSize = 0;//一页的数量
 
-    private int pageSize;//一页的数量
+    private boolean isCount;//是否为统计数据
 
     public static CURDParam getInstans(){
         return new CURDParam();
     }
 
-    public CURDParam<T> update(T updateObject) {
+    public boolean isCount() {
+        return isCount;
+    }
+
+    public void setCount(boolean count) {
+        isCount = count;
+    }
+
+    public CURDParam update(T entity) {
+        this.updateObject = entity;
+        return this;
+    }
+
+    public CURDParam where(CustomParam customParam){
+        if(params == null) params = new HashMap<>();
+        this.params.put(params.size()+"",customParam);
+        return this;
+    }
+
+    public CURDParam where(String column,Object value){
+        if(params == null) params = new HashMap<>();
+        this.params.put(params.size()+"",new CustomParam(column,value));
+        return this;
+    }
+
+    public CURDParam group(String column){
+        if(groups == null) groups = new HashMap<>();
+        this.groups.put(params.size()+"",new CustomParam(column,null));
+        return this;
+    }
+
+    public CURDParam group(CustomParam customParam){
+        if(groups == null) groups = new HashMap<>();
+        this.groups.put(params.size()+"",customParam);
+        return this;
+    }
+
+    public CURDParam sort(CustomParam customParam){
+        if(sorts == null) sorts = new HashMap<>();
+        this.sorts.put(params.size()+"",customParam);
+        return this;
+    }
+
+    public CURDParam sort(String column,Object value){
+        if(sorts == null) sorts = new HashMap<>();
+        this.sorts.put(params.size()+"",new CustomParam(column,value));
+        return this;
+    }
+
+    public CURDParam limit(int pageNumber,int pageSize){
+        this.pageNumber = pageNumber;
+        this.pageSize = pageSize;
+        return this;
+    }
+
+    public Map<String, CustomParam> getParams() {
+        return params;
+    }
+
+    public void setParams(Map<String, CustomParam> params) {
+        this.params = params;
+    }
+
+    public Map<String, CustomParam> getSorts() {
+        return sorts;
+    }
+
+    public void setSorts(Map<String, CustomParam> sorts) {
+        this.sorts = sorts;
+    }
+
+    public Map<String, CustomParam> getGroups() {
+        return groups;
+    }
+
+    public void setGroups(Map<String, CustomParam> groups) {
+        this.groups = groups;
+    }
+
+    public T getUpdateObject() {
+        return updateObject;
+    }
+
+    public void setUpdateObject(T updateObject) {
         this.updateObject = updateObject;
-        return this;
-    }
-
-    public CURDParam where(String column, Object parma) {
-        if (params == null) {
-            params = new HashMap<>();
-        }
-        type = type | WHERE;
-        params.put(column, parma);
-        return this;
-    }
-
-    public CURDParam sort(String column, String desc) {
-        if (sorts == null) {
-            sorts = new LinkedHashMap<>();
-        }
-        type = type | SORT;
-        sorts.put(column, desc);
-        return this;
-    }
-
-    public CURDParam group(String column) {
-        if (groups == null) {
-            groups = new LinkedList();
-        }
-        type = type |GROUP;
-        groups.add(column);
-        return this;
-    }
-
-    public CURDParam limit(int skip, int len) {
-        type = type | LIMIT;
-        limit = new CustomParamsLimit(skip, len);
-        return this;
     }
 
     public int getPageNumber() {
         return pageNumber;
     }
 
+    public void setPageNumber(int pageNumber) {
+        this.pageNumber = pageNumber;
+    }
+
     public int getPageSize() {
         return pageSize;
     }
 
-    public boolean isLIMIT() {
-        return !((type & LIMIT) == 0);
-    }
-
-    public boolean isWHERE() {
-        return !((type & WHERE) == 0);
-    }
-
-    public boolean isSORT() {
-        return !((type & SORT) == 0);
-    }
-
-    public boolean isORIGINALSQL(){
-        return !((type & ORIGINALSQL) == 0);
-    }
-
-    public boolean isGROUP() {
-        return !((type & GROUP) == 0);
-    }
-
-    public Map<String, Object> getParams() {
-        return params;
-    }
-
-    public Map<String, String> getSorts() {
-        return sorts;
-    }
-
-    public List<String> getGroups() {
-        return groups;
-    }
-
-    public String getLimit() {
-        return this.limit.skip + " , " + this.limit.len;
-    }
-
-    class CustomParamsLimit {
-        private int skip;
-        private int len;
-
-        public CustomParamsLimit(int skip, int len) {
-            this.skip = skip;
-            this.len = len;
-        }
-    }
-
-    public void setParams(Map<String, Object> params) {
-        type  =type | WHERE;
-        this.params = params;
-    }
-
-    public void setSorts(Map<String, String> sorts) {
-        type = type | SORT;
-        this.sorts = sorts;
-    }
-
-    public void setGroups(List<String> groups) {
-        type = type | GROUP;
-        this.groups = groups;
-    }
-
-    public void setPageNumber(int pageNumber) {
-        type = type | LIMIT;
-        this.pageNumber = pageNumber;
-    }
-
     public void setPageSize(int pageSize) {
-        type = type | LIMIT;
         this.pageSize = pageSize;
-    }
-
-    public  void setOriginalsql() {
-        type = type | ORIGINALSQL;
     }
 }

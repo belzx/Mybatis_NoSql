@@ -3,10 +3,10 @@ springboot-mybatis-mysql 框架下的的一套CURD基础框架，支持动态查
 框架参照[hsweb](https://github.com/hs-web/hsweb-framework/tree/master/hsweb-commons)，简化代码，可塑性更高；
 ## 使用方法：
   1. 继承各类接口 
-      CustomEntity<Pk>
-      CustomController<Po extends CustomEntity, Pk> 
-      CustomService<Po extends CustomEntity, Pk> 
-      CustomMapper<Po extends CustomEntity, Pk>
+      CustomEntity<PK>
+      CustomController<Po extends CustomEntity, PK> 
+      CustomService<Po extends CustomEntity, PK> 
+      CustomMapper<Po extends CustomEntity, PK>
   2. 注解导入 @Import(LZXAutoConfiguration.class) 
   3. 注意要扫描到jar中的/resources/basicmapper.xml
   4. 按此模板书写创建mapper.后续使用代码生成器。。
@@ -37,11 +37,11 @@ springboot-mybatis-mysql 框架下的的一套CURD基础框架，支持动态查
         <include refid="BasicMapper.buildBatchInsertSql"/>
     </insert>
 
-    <delete id="deleteByPk" >
+    <delete id="deleteByPK" >
         delete from users where id =#{id}
     </delete>
 
-    <select id="selectByPk"  resultMap="BaseResultMap">
+    <select id="selectByPK"  resultMap="BaseResultMap">
 		select * from users where id = #{id}
 	</select>
 

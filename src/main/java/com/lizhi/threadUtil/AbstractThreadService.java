@@ -24,9 +24,9 @@ public abstract class AbstractThreadService<T> {
                         List<T> product = product();
                         System.out.println("线程" + Thread.currentThread().getName() + "生产了："+product.size()+"个对象");
                         lists.addAll(product);
-                        lists.notifyAll();
                     }
                     try {
+                        lists.notifyAll();
                         lists.wait();
                     } catch (InterruptedException e) {
                         e.printStackTrace();
@@ -44,9 +44,9 @@ public abstract class AbstractThreadService<T> {
                             //开始消费
                             System.out.println("线程" + Thread.currentThread().getName() + "开始消费了一个");
                             consumer(lists.poll());
-                            lists.notifyAll();
                         }
                         try {
+                            lists.notifyAll();
                             lists.wait();
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -70,7 +70,4 @@ public abstract class AbstractThreadService<T> {
      * @return
      */
     abstract List<T> product();
-
-
-
 }

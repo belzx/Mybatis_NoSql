@@ -6,12 +6,11 @@ import java.util.Map;
 
 public class BeanTransUtil {
 
-
-
     public static Map<String, Object> convertObjToMap(Object obj) {
         Map<String, Object> reMap = new HashMap<String, Object>();
         if (obj == null)
             return null;
+
         try {
             Class<?> objClass = obj.getClass();
             while (objClass != null) {

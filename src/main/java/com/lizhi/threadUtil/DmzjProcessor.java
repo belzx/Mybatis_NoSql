@@ -36,15 +36,15 @@ public class DmzjProcessor implements PageProcessor {
 		
 	}
 
-	public static void main(String[] args) {
-		long startTime = System.currentTimeMillis();
-		
-		Spider.create(new DmzjProcessor()).addUrl("https://chinesepornmovie.net/videos/latest")
-				.thread(5) //开启五个线程抓取图片
-				.run();
-		long endTime = System.currentTimeMillis();
-
-		System.out.println("花费时间" + ((endTime - startTime) / 1000) + "秒");
-	}
+//	public static void main(String[] args) {
+//		long startTime = System.currentTimeMillis();
+//
+//		Spider.create(new DmzjProcessor()).addUrl("https://chinesepornmovie.net/videos/latest")
+//				.thread(5) //开启五个线程抓取图片
+//				.run();
+//		long endTime = System.currentTimeMillis();
+//
+//		System.out.println("花费时间" + ((endTime - startTime) / 1000) + "秒");
+//	}
 
 }

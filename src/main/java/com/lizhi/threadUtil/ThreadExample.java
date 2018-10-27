@@ -26,9 +26,9 @@ public class ThreadExample {
                         hasProduct = true;
                         //开始生产
                         System.out.println("生产了一个");
-                        o.notifyAll();
                     }
                     try {
+                        o.notifyAll();
                         o.wait();
                     } catch (InterruptedException e) {
                         e.printStackTrace();
@@ -45,9 +45,9 @@ public class ThreadExample {
                         hasProduct = false;
                         //开始生产
                         System.out.println("消费了一个");
-                        o.notifyAll();
                     }
                     try {
+                        o.notifyAll();
                         o.wait();
                     } catch (Exception e) {
                         e.printStackTrace();
