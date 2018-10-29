@@ -3,11 +3,14 @@ package com.lizhi.builder;
 
 import com.lizhi.bean.CURDParam;
 import com.lizhi.bean.CustomParam;
+import org.apache.ibatis.mapping.ResultMap;
 import org.apache.ibatis.mapping.ResultMapping;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.springframework.util.StringUtils;
 
+import javax.annotation.PostConstruct;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class EasyOrmSqlBuilder {
@@ -18,13 +21,17 @@ public class EasyOrmSqlBuilder {
 
     public static final String UPDATE_SQL = "%s = #{t_parameter.updateObject.%s}";
 
+//    public static final String BASESQL_WHERE = "%s %s #{t_parameter.params.%s.value,jdbcType=%s}";
+
+    public static final String BASESQL_WHERE = "%s %s #{t_parameter.params.%s.value %s}";
+
 //    public static final String INSERT_SQL = "insert into %s(%s) values (%s)";
 
 //    public static final String BATCH_INSERT_SQL = "insert into %s(%s) values ( <foreach collection=\"list\" item=\"item\" open=\"(\" close=\")\" separator=\",\" index=\"index\"> %s  </foreach>)";
     /**
      * key:(property:object)
      */
-    protected static final Map<String, Map<String, ResultMapping>> mpas_property_resultMapping = new HashMap<>();
+    protected static final Map<String, Map<String, ResultMapping>> mpas_column_resultMapping = new HashMap<>();
 
     protected static final Map<String, String> maps_selectfiled = new HashMap<>();
 
@@ -39,6 +46,9 @@ public class EasyOrmSqlBuilder {
 
     public static void setSqlSession(SqlSessionFactory sqlSession) {
         EasyOrmSqlBuilder.sqlSession = sqlSession;
+        for(String resultId : sqlSession.getConfiguration().getResultMapNames()){
+            initResultMap(resultId);
+        }
     }
 
     public static EasyOrmSqlBuilder getInstance() {
@@ -57,13 +67,13 @@ public class EasyOrmSqlBuilder {
      *
      * @param resultMapId
      */
-    public void initResultMap(String resultMapId) {
+    public static void initResultMap(String resultMapId) {
 
         /**获取resultMapId的list ResultMapping*/
         List<ResultMapping> resultMapping = getSqlSession().getConfiguration().getResultMap(resultMapId).getResultMappings();
 
         /**初始化key（属性名-属性）*/
-        mpas_property_resultMapping.put(resultMapId, resultMapping.stream().collect(Collectors.toMap(ResultMapping::getProperty, d -> d)));
+        mpas_column_resultMapping.put(resultMapId, resultMapping.stream().filter(d ->{ return !StringUtils.isEmpty(d.getNestedQueryId());}).collect(Collectors.toMap(ResultMapping::getColumn, d -> d)));
 
         /**初始化select固定的字符串*/
         StringBuilder selectField = new StringBuilder();
@@ -108,36 +118,34 @@ public class EasyOrmSqlBuilder {
      * 需要构造成这个user = #{params.param.userCode,jdbcType=VARCHAR}
      *
      * @param resultMapId
-     * @param tableName
-     * @param customParams
      * @return
      */
-
-    public static final String BASESQLWHERE = "%s = #{t_parameter.params.%s.value,jdbcType=%s}";
-    public String buildWhere(String resultMapId, CURDParam CURDParam) {
+    public String buildWhere(String resultMapId , CURDParam CURDParam) {
         if (CURDParam.getParams() == null || CURDParam.getParams().isEmpty()) return "";
 
-        final Map<String, ResultMapping> resultMappingMaps = getResultMapping(resultMapId);
-
         final StringBuilder where = new StringBuilder();
-//        ArrayList<CustomParam> values = new ArrayList(CURDParam.getParams().values());
-//        ArrayList<CustomParam> values = new ArrayList(CURDParam.getParams().values());
+
         Set<Map.Entry<Integer,CustomParam>> entrys = CURDParam.getParams().entrySet();
+        Map<String, ResultMapping> stringResultMappingMap = mpas_column_resultMapping.get(resultMapId);
+
         for(Map.Entry<Integer,CustomParam> entry : entrys){
             CustomParam param = entry.getValue();
 
-            if (where.length() != 0) where.append(param.getLink());
-
-            if(param.isOriginalSql()){
-                where.append(param.getColumn() + param.getSymbol()+"'" + param.getValue()+"'");
-                continue;
+            if (where.length() != 0){
+                where.append(" "+param.getParamLink()+" ");
             }
 
-            ResultMapping resultMapping = resultMappingMaps.get(param.getColumn());
-            if(resultMapping == null)
-                throw new IllegalArgumentException("使用了非法的参数：" + param.getColumn());
-            where.append(String.format(BASESQLWHERE, resultMapping.getColumn(),entry.getKey(), resultMapping.getJdbcType()));
-        }
+            ResultMapping resultMapping = stringResultMappingMap.get(param.getColumn());
+            if(resultMapping != null){
+                if(resultMapping.getJdbcType() == null || "".equals(resultMapping.getJdbcType().toString())){
+                    where.append(String.format(BASESQL_WHERE,resultMapping.getColumn(),param.getSymbol(),entry.getKey(), ",jdbcType=VARCHAR"));
+                }else {
+                    where.append(String.format(BASESQL_WHERE,resultMapping.getColumn(),param.getSymbol(),entry.getKey(), ",jdbcType="+resultMapping.getJdbcType().toString()));
+                }
+             }else {
+                where.append(String.format(BASESQL_WHERE,param.getColumn(),param.getSymbol(),entry.getKey(),""));
+            }
+          }
         return where.toString();
     }
 
@@ -176,8 +184,8 @@ public class EasyOrmSqlBuilder {
     }
 
     public String buildGroupField(String resultMapId, CURDParam CURDParam) {
-        StringBuilder sb = new StringBuilder();
-        final Map<String, ResultMapping> resultMappingMaps = getResultMapping(resultMapId);
+        StringBuilder sql = new StringBuilder();
+
         if (CURDParam.getGroups()!= null && !CURDParam.getGroups().isEmpty()) {
             StringBuilder s1 = new StringBuilder("GROUP BY ");
             ArrayList<CustomParam> groups = new ArrayList(CURDParam.getGroups().values());
@@ -185,27 +193,17 @@ public class EasyOrmSqlBuilder {
                 if (!"GROUP BY ".equals(s1.toString())) {
                     s1.append(",");
                 }
-
-                if(param.isOriginalSql()){
-                    s1.append(param.getValue());
-                    continue;
-                }
-
-                ResultMapping resultMapping = resultMappingMaps.get(param.getColumn());
-                if(resultMapping == null){
-                    throw new IllegalArgumentException("参数"+param.getColumn()+",不存在于resultMapId:{"+resultMapId+"}的配置文件中" );
-                }
-
-                s1.append(resultMapping.getColumn());
+                s1.append(param.getColumn());
             }
-            sb.append(s1.toString()).append("\n");
+            sql.append(s1.toString()).append("\n");
         }
-        return sb.toString();
+
+        return sql.toString();
     }
 
     public String buildSortField(String resultMapId, CURDParam CURDParam) {
-        StringBuilder sb = new StringBuilder();
-        final Map<String, ResultMapping> resultMappingMaps = getResultMapping(resultMapId);
+        StringBuilder sql = new StringBuilder();
+
         if (CURDParam.getSorts()!= null &&!CURDParam.getSorts().isEmpty()) {
             StringBuilder s1 = new StringBuilder("ORDER BY ");
             ArrayList<CustomParam> sorts = new ArrayList(CURDParam.getSorts().values());
@@ -214,51 +212,21 @@ public class EasyOrmSqlBuilder {
                     s1.append(",");
                 }
 
-                if(param.isOriginalSql()){
-                    s1.append(param.getValue());
-                    continue;
-                }
-
-                ResultMapping resultMapping = resultMappingMaps.get(param.getColumn());
-                if(resultMapping == null)
-                    throw new IllegalArgumentException("使用了非法的参数：" + param.getColumn());
-
-                s1.append(resultMapping.getColumn()).append(" ").append(param.getValue());
+                s1.append(param.getColumn()).append(" ").append(param.getValue());
             }
-            sb.append(s1.toString()).append("\n");
+            sql.append(s1.toString()).append("\n");
         }
-        return sb.toString();
+
+        return sql.toString();
     }
 
     public String buildLimitField(String resultMapId, CURDParam CURDParam) {
         StringBuilder sb = new StringBuilder();
-        final Map<String, ResultMapping> resultMappingMaps = getResultMapping(resultMapId);
         if (!(CURDParam.getPageNumber() == 0 && CURDParam.getPageSize() == 0)) {
             sb.append("LIMIT " + CURDParam.getPageNumber()).append(",").append(CURDParam.getPageSize());
         }
         return sb.toString();
     }
-//    /**
-//     * group by name1 ,name2
-//     * order by name1 desc ,name2 adc
-//     * limit 0 ,10
-//     *
-//     * @param resultMapId
-//     * @param CURDParam
-//     * @return
-//     */
-//    public String buildConditionField(String resultMapId, CURDParam CURDParam) {
-//        StringBuilder sb = new StringBuilder();
-//        final Map<String, ResultMapping> resultMappingMaps = getResultMapping(resultMapId);
-//
-//
-//
-//        if (!(CURDParam.getPageNumber() == 0 && CURDParam.getPageSize() == 0)) {
-//            sb.append("LIMIT " + CURDParam.getPageNumber()).append(",").append(CURDParam.getPageSize());
-//        }
-//
-//        return sb.toString();
-//    }
 
     public String buildInsertField(String resultMapId) {
         String field = maps_insert_field.get(resultMapId);
@@ -277,14 +245,4 @@ public class EasyOrmSqlBuilder {
         }
         return content;
     }
-
-    public Map<String, ResultMapping> getResultMapping(String resultMapId) {
-        Map<String, ResultMapping> maps = mpas_property_resultMapping.get(resultMapId);
-        if (maps == null) {
-            initResultMap(resultMapId);
-            maps = mpas_property_resultMapping.get(resultMapId);
-        }
-        return maps;
-    }
-
 }
