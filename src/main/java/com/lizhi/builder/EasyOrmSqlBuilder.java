@@ -70,10 +70,10 @@ public class EasyOrmSqlBuilder {
     public static void initResultMap(String resultMapId) {
 
         /**获取resultMapId的list ResultMapping*/
-        List<ResultMapping> resultMapping = getSqlSession().getConfiguration().getResultMap(resultMapId).getResultMappings();
+        List<ResultMapping> resultMapping = getSqlSession().getConfiguration().getResultMap(resultMapId).getResultMappings().stream().filter(d ->{ return StringUtils.isEmpty(d.getNestedQueryId());}).collect(Collectors.toList());
 
         /**初始化key（属性名-属性）*/
-        mpas_column_resultMapping.put(resultMapId, resultMapping.stream().filter(d ->{ return !StringUtils.isEmpty(d.getNestedQueryId());}).collect(Collectors.toMap(ResultMapping::getColumn, d -> d)));
+        mpas_column_resultMapping.put(resultMapId, resultMapping.stream().collect(Collectors.toMap(ResultMapping::getColumn, d -> d)));
 
         /**初始化select固定的字符串*/
         StringBuilder selectField = new StringBuilder();
