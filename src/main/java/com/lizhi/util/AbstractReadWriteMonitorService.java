@@ -24,18 +24,20 @@ public abstract class AbstractReadWriteMonitorService<T> {
 
     public static final int DEFAULT_MONITOR_DURATION = 10 * 1000;
 
+    public static final int MAX_MONITOR_DURATION = 20 * 1000;
+
     public static final int DEFAULT_GC_MONITOR_DURATION = 10 * 60 * 1000;
 
     public AbstractReadWriteMonitorObjectManagement management;
 
     //未过时的保存对象
-    private volatile Map<String, ReadWriteMonitorObject<T>> monitorMap = new HashMap<>();
+    protected volatile Map<String, ReadWriteMonitorObject<T>> monitorMap = new HashMap<>();
 
     //已经过时的保存对象
-    private volatile Map<String, ReadWriteMonitorObject<T>> outTimeMap = new ConcurrentHashMap<>();
+    protected volatile Map<String, ReadWriteMonitorObject<T>> outTimeMap = new ConcurrentHashMap<>();
 
     //正在执行扫描的线程数目
-    private volatile AtomicInteger excutimeMonitorThreadNum = new AtomicInteger(0);
+    protected volatile AtomicInteger excutimeMonitorThreadNum = new AtomicInteger(0);
 
     //一个线程最大处理数据的大小
     protected volatile int batchAnalysNum = DEFAULT_ANALYS_NUM;
@@ -47,7 +49,7 @@ public abstract class AbstractReadWriteMonitorService<T> {
     private int gcDurationTime = DEFAULT_GC_MONITOR_DURATION;
 
     //扫描一次的间隔时间，尽量会控制在10s，如果超时，则会有一套算法机制
-    private volatile int monitorDuration = DEFAULT_MONITOR_DURATION;
+    protected volatile int monitorDuration = DEFAULT_MONITOR_DURATION;
 
     //一个读锁顶多只能同时处理100条数据，也就是意味着，
     //超过100条监控的数据，则增加一条读锁
