@@ -240,6 +240,7 @@ public abstract class AbstractReadWriteMonitorService<T> {
                 if (endOfindex > monitorNum) {
                     endOfindex = monitorNum;
                 }
+
                 List<ReadWriteMonitorObject<T>> rsubmitObjects1 = rsubmitObjects.subList(index, endOfindex);
                 if (rsubmitObjects1 != null && !rsubmitObjects1.isEmpty()) {
                     index = endOfindex;
@@ -247,6 +248,9 @@ public abstract class AbstractReadWriteMonitorService<T> {
                     threadExcutingNum++;
                     log.info("开始启动线程总数：{}，执行：{}", excutimeMonitorThreadNum, endOfindex);
                     cachedThreadPool.execute(new Task(rsubmitObjects1));
+                    if(endOfindex == monitorNum){
+                        break;
+                    }
                 } else {
                     break;
                 }
