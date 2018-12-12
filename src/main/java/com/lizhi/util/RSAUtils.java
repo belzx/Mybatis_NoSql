@@ -15,7 +15,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * rsa 公钥加密，私钥解密
+ * rsa 公钥加密-私钥解密
+ *     私钥加密-公钥解密
  */
 public class RSAUtils {
 

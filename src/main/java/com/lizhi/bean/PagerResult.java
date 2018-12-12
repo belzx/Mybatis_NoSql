@@ -1,10 +1,11 @@
 package com.lizhi.bean;
 
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 
-public class PagerResult<E> {
+public class PagerResult<E> implements Serializable {
     private static final long serialVersionUID = -6171751136953308027L;
 
     public static <E> PagerResult<E> empty(){
