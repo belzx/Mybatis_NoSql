@@ -1,12 +1,17 @@
 package com.lizhi.controller;
 
 import com.lizhi.bean.*;
+import com.lizhi.orm.param.Param;
+import com.lizhi.orm.param.QueryParam;
+import com.lizhi.orm.term.SortTerm;
+import com.lizhi.orm.term.Term;
 import com.lizhi.service.CustomService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -28,12 +33,12 @@ public interface CustomController <M extends CustomEntity,PK > {
     }
 
     @GetMapping
-    default ResponseMessage<PagerResult<M>> list(CURDParam param) {
+    default ResponseMessage<PagerResult<M>> list(QueryParam param) {
         return ok(getService().selectPager(param));
     }
 
     @GetMapping("/count")
-    default ResponseMessage<Integer> count(CURDParam param) {
+    default ResponseMessage<Integer> count(QueryParam param) {
         return ok(Integer.valueOf(getService().count(param)));
     }
 
@@ -42,28 +47,24 @@ public interface CustomController <M extends CustomEntity,PK > {
         return ok(assertNotNull(getService().selectByPK(id)));
     }
 
-    default Map<String,Object> getParams(CURDParam curdParam) {
+    default Map<String,Object> getParams(Param curdParam) {
         Map params = curdParam.getParams();
         if(params == null){
             return null;
         }
-        return  (Map<String,Object>) params.values().stream().collect(Collectors.toMap(CustomParam::getColumn, CustomParam::getValue));
+        return  (Map<String,Object>) params.values().stream().collect(Collectors.toMap(Term::getColumn, Term::getValue));
     }
 
-    default Map<String,Object> getSorts(CURDParam curdParam) {
-        Map sorts = curdParam.getSorts();
+    default LinkedHashMap<String,Object> getSorts(QueryParam curdParam) {
+        List<SortTerm> sorts = curdParam.getSorts();
         if(sorts == null){
             return null;
         }
-        return  (Map<String,Object>) sorts.values().stream().collect(Collectors.toMap(CustomParam::getColumn, CustomParam::getValue));
+        return  (LinkedHashMap<String,Object>) sorts.stream().collect(Collectors.toMap(SortTerm::getColumn, SortTerm::getValue));
     }
 
-    default Map<String,Object> getGroups(CURDParam curdParam) {
-        Map groups = curdParam.getGroups();
-        if(groups == null){
-            return null;
-        }
-        return  (Map<String,Object>) groups.values().stream().collect(Collectors.toMap(CustomParam::getColumn, CustomParam::getValue));
+    default List<String> getGroups(QueryParam curdParam) {
+        return curdParam.getGroups();
     }
 
 

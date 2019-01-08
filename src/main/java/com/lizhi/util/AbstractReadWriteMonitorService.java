@@ -13,7 +13,6 @@ public abstract class AbstractReadWriteMonitorService<T> {
 
     private static Logger log = LoggerFactory.getLogger(AbstractReadWriteMonitorService.class);
 
-
     public static final int DEFAULT_ANALYS_NUM = 64;
 
     public static final int MONITOR_POOL_MAX = 200;
@@ -244,7 +243,7 @@ public abstract class AbstractReadWriteMonitorService<T> {
                 List<ReadWriteMonitorObject<T>> rsubmitObjects1 = rsubmitObjects.subList(index, endOfindex);
                 if (rsubmitObjects1 != null && !rsubmitObjects1.isEmpty()) {
                     index = endOfindex;
-                    excutimeMonitorThreadNum.set(excutimeMonitorThreadNum.get() + 1);
+                    excutimeMonitorThreadNum.incrementAndGet();
                     threadExcutingNum++;
                     log.info("开始启动线程总数：{}，执行：{}", excutimeMonitorThreadNum, endOfindex);
                     cachedThreadPool.execute(new Task(rsubmitObjects1));
@@ -328,7 +327,7 @@ public abstract class AbstractReadWriteMonitorService<T> {
 
             //修改状态
             log.info(Thread.currentThread().getName() + "执行完毕");
-            excutimeMonitorThreadNum.set(excutimeMonitorThreadNum.get() - 1);
+            excutimeMonitorThreadNum.decrementAndGet();
             synchronized (lockObject) {
                 lockObject.notifyAll();
             }

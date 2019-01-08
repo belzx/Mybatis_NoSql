@@ -21,19 +21,6 @@
         </set>
     </sql>
 
-    <!--生成后续状态字段 group by  order by  limit -->
-    <sql id="buildGroupField">
-        ${@com.lizhi.builder.SqlBuilder@current().buildGroupField(resultMapId,#this['t_parameter'])}
-    </sql>
-
-    <sql id="buildSortField">
-        ${@com.lizhi.builder.SqlBuilder@current().buildSortField(resultMapId,#this['t_parameter'])}
-    </sql>
-
-    <sql id="buildLimitField">
-        ${@com.lizhi.builder.SqlBuilder@current().buildLimitField(resultMapId,#this['t_parameter'])}
-    </sql>
-
     <!--生成insert的字段 -->
     <sql id="buildInsertField">
         ${@com.lizhi.builder.SqlBuilder@current().buildInsertField(resultMapId)}
@@ -54,9 +41,6 @@
             <where>
                 <include refid="BasicMapper.buildWhere"/>
             </where>
-            <include refid="BasicMapper.buildGroupField"/>
-            <include refid="BasicMapper.buildSortField"/>
-            <include refid="BasicMapper.buildLimitField"/>
         </trim>
     </sql>
 
@@ -109,7 +93,7 @@
             <where>
                 <include refid="BasicMapper.buildWhere"/>
             </where>
-            <include refid="BasicMapper.buildGroupField"/>
+            <!--<include refid="BasicMapper.buildGroupField"/>-->
         </trim>
     </sql>
 </mapper>

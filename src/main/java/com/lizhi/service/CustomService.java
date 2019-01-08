@@ -3,7 +3,9 @@ package com.lizhi.service;
 import com.lizhi.bean.CustomEntity;
 import com.lizhi.bean.PagerResult;
 import com.lizhi.dao.CustomMapper;
-import com.lizhi.bean.CURDParam;
+import com.lizhi.orm.param.DeleteParam;
+import com.lizhi.orm.param.QueryParam;
+import com.lizhi.orm.param.UpdateParam;
 import com.lizhi.util.ClassExportValueUtil;
 import com.lizhi.util.ClassUtils;
 
@@ -19,7 +21,7 @@ public interface CustomService<PO extends CustomEntity, PK> {
      * 数据导出
      * @param params
      */
-    default List<List<String>> export(CURDParam params){
+    default List<List<String>> export(QueryParam params){
         PagerResult<PO> poPagerResult = this.selectPager(params);
         List<PO> data = poPagerResult.getData();
         return ClassExportValueUtil.getReflectValues(data,ClassUtils.getSuperClassGenricType(this.getClass()));
@@ -29,9 +31,9 @@ public interface CustomService<PO extends CustomEntity, PK> {
      * 分页查询
      * @param params
      */
-    default PagerResult<PO> selectPager(CURDParam params){
+    default PagerResult<PO> selectPager(QueryParam params){
         PagerResult<PO> result = new PagerResult<>();
-        params.limit(params.getPageNumber() * params.getPageSize(),params.getPageSize());
+        params.setPageNumber(params.getPageNumber() * params.getPageSize());
 
         int count = getMapper().count(params);
         if(count == 0){
@@ -39,7 +41,7 @@ public interface CustomService<PO extends CustomEntity, PK> {
             result.setTotal(0);
         }else {
             result.setTotal(count);
-            result.setData(getMapper().query(params));
+            result.setData(select(params));
         }
         return result;
     }
@@ -48,16 +50,15 @@ public interface CustomService<PO extends CustomEntity, PK> {
      * 不分页查询
      * @param params
      */
-    default  PagerResult<PO> select(CURDParam params){
-        PagerResult<PO> result = new PagerResult<>();
-        result.setTotal(getMapper().count(params));
-        result.setData(getMapper().query(params));
-        return result;
+    default  List<PO> select(QueryParam params){
+        return this.getMapper().query(params);
     }
 
-    default  PO selectSingle(CURDParam params){
+    default  PO selectSingle(QueryParam params){
         PagerResult<PO> result = new PagerResult<>();
-        List<PO> select = this.query(params.limit(0, 1));
+        params.setPageNumber(0);
+        params.setPageSize(1);
+        List<PO> select = this.query(params);
         if(select == null || select.isEmpty()){
             return  null;
         }else {
@@ -77,30 +78,30 @@ public interface CustomService<PO extends CustomEntity, PK> {
         return getMapper().deleteByPK((PK)id);
     }
 
-    default int delete(CURDParam param) {
+    default int delete(DeleteParam param) {
         return getMapper().delete(param);
     }
 
     default int update(PO entity) {
-        CURDParam<CustomEntity> customEntityCURDParam = new CURDParam<>();
-        customEntityCURDParam.update(entity);
+        UpdateParam updateParam =UpdateParam.build();
+        updateParam.update(entity);
         if(entity.getId() == null){
             throw new IllegalArgumentException("主键参数id不能为空");
         }else{
-            customEntityCURDParam.where("id",entity.getId());
+            updateParam.where("id",entity.getId());
         }
-        return getMapper().update(customEntityCURDParam);
+        return getMapper().update(updateParam);
     }
 
-    default int update(CURDParam CURDParam) {
-        return getMapper().update(CURDParam);
+    default int update(UpdateParam updateParam) {
+        return getMapper().update(updateParam);
     }
 
-    default List<PO> query(CURDParam param) {
+    default List<PO> query(QueryParam param) {
         return getMapper().query(param);
     }
 
-    default int count(CURDParam param) {
+    default int count(QueryParam param) {
         return getMapper().count(param);
     }
 

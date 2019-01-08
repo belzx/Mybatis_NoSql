@@ -1,7 +1,5 @@
 package com.lizhi.util;
 
-import com.lizhi.bean.PagerResult;
-import com.lizhi.conf.LZXAutoConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,4 +1,18 @@
 # lzx-commons
+## 如何使用
+@Import(LZXAutoConfiguration.class) 
+~~~
+@EnableScheduling
+@SpringBootApplication
+@Import(LZXAutoConfiguration.class) //扫描
+@ImportResource("classpath:context.xml")
+public class Application {
+    public static void main(String[] args) {
+        ConfigurableApplicationContext run = SpringApplication.run(Application.class, args);
+    }
+}
+~~~
+##
 springboot-mybatis-mysql 框架下的的一套CURD基础框架，支持动态查询修改,简易上手,直接导入jar即可。
 框架参照[hsweb](https://github.com/hs-web/hsweb-framework/tree/master/hsweb-commons)，简化代码，可塑性更高；
 ## 使用方法：
