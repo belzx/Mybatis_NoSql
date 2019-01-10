@@ -6,41 +6,46 @@ import com.lizhi.dao.CustomMapper;
 import com.lizhi.orm.param.DeleteParam;
 import com.lizhi.orm.param.QueryParam;
 import com.lizhi.orm.param.UpdateParam;
+import com.lizhi.orm.term.Term;
 import com.lizhi.util.ClassExportValueUtil;
 import com.lizhi.util.ClassUtils;
+import com.lizhi.util.CommonsUtils;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
-
+@Transactional(rollbackFor = Throwable.class)
 public interface CustomService<PO extends CustomEntity, PK> {
 
     CustomMapper<PO, PK> getMapper();
 
     /**
      * 数据导出
+     *
      * @param params
      */
-    default List<List<String>> export(QueryParam params){
+    default List<List<String>> export(QueryParam params) {
         PagerResult<PO> poPagerResult = this.selectPager(params);
         List<PO> data = poPagerResult.getData();
-        return ClassExportValueUtil.getReflectValues(data,ClassUtils.getSuperClassGenricType(this.getClass()));
+        return ClassExportValueUtil.getReflectValues(data, ClassUtils.getSuperClassGenricType(this.getClass()));
     }
 
     /**
      * 分页查询
+     *
      * @param params
      */
-    default PagerResult<PO> selectPager(QueryParam params){
+    default PagerResult<PO> selectPager(QueryParam params) {
         PagerResult<PO> result = new PagerResult<>();
-        params.setPageNumber(params.getPageNumber() * params.getPageSize());
-
-        int count = getMapper().count(params);
-        if(count == 0){
+        int count = getMapper().count((QueryParam) params);
+        if (count == 0) {
             result.setData(new ArrayList<>());
             result.setTotal(0);
-        }else {
+        } else {
             result.setTotal(count);
+            params.setPageNumber(CommonsUtils.parseSkip(params.getPageNumber(),params.getPageSize(),count));
             result.setData(select(params));
         }
         return result;
@@ -50,71 +55,85 @@ public interface CustomService<PO extends CustomEntity, PK> {
      * 不分页查询
      * @param params
      */
-    default  List<PO> select(QueryParam params){
-        return this.getMapper().query(params);
+    @Transactional(readOnly = true)
+    default List<PO> select(QueryParam params) {
+        return this.getMapper().query((QueryParam) params);
     }
 
-    default  PO selectSingle(QueryParam params){
+    @Transactional(readOnly = true)
+    default List<Map<String, Object>> selectByJoin(QueryParam params) {
+        return this.getMapper().queryByJoin((QueryParam) params);
+    }
+
+    @Transactional(readOnly = true)
+    default int count(QueryParam param) {
+        return getMapper().count((QueryParam) param);
+    }
+
+    @Transactional(readOnly = true)
+    default PO selectSingle(QueryParam params) {
         PagerResult<PO> result = new PagerResult<>();
         params.setPageNumber(0);
         params.setPageSize(1);
-        List<PO> select = this.query(params);
-        if(select == null || select.isEmpty()){
-            return  null;
-        }else {
+        List<PO> select = this.query((QueryParam) params);
+        if (select == null || select.isEmpty()) {
+            return null;
+        } else {
             return select.get(0);
         }
     }
 
-    default int insert(PO entity) {
-        return getMapper().insert((PO)entity);
+    @Transactional(readOnly = true)
+    default PO selectByPK(PK id) {
+        return this.getMapper().selectByPK(id);
     }
 
-    default List<PO> batchInsert(List<PO> entityList) {
+    @Transactional(readOnly = true)
+    default List<PO> selectByPKS(List<PK> ids) {
+        return this.getMapper().selectByPKS(ids);
+    }
+
+    @Transactional(readOnly = true)
+    default List<PO> query(QueryParam param) {
+        return getMapper().query((QueryParam) param);
+    }
+
+    default int insert(PO entity) {
+        return getMapper().insert((PO) entity);
+    }
+
+    default int insert(List<PO> entityList) {
         return getMapper().batchInsert(entityList);
     }
 
-    default int deleteByPK(Object id) {
-        return getMapper().deleteByPK((PK)id);
-    }
-
     default int delete(DeleteParam param) {
-        return getMapper().delete(param);
+        return getMapper().delete((DeleteParam) param);
     }
 
     default int update(PO entity) {
-        UpdateParam updateParam =UpdateParam.build();
-        updateParam.update(entity);
-        if(entity.getId() == null){
+        UpdateParam updateParam = UpdateParam.build();
+        updateParam.set(entity);
+        if (entity.getId() == null) {
             throw new IllegalArgumentException("主键参数id不能为空");
-        }else{
-            updateParam.where("id",entity.getId());
+        } else {
+            updateParam.where("id", entity.getId());
         }
         return getMapper().update(updateParam);
     }
 
+    default int deleteByPK(Object id) {
+        return getMapper().deleteByPK((PK) id);
+    }
+
     default int update(UpdateParam updateParam) {
-        return getMapper().update(updateParam);
+        return getMapper().update((UpdateParam) updateParam);
     }
 
-    default List<PO> query(QueryParam param) {
-        return getMapper().query(param);
+    default int saveOrUpdate(PO entity) {
+        if (selectByPK((PK) entity.getId()) == null) {
+           return insert(entity);
+        } else {
+           return update(entity);
+        }
     }
-
-    default int count(QueryParam param) {
-        return getMapper().count(param);
-    }
-
-    default PO selectByPK(PK id) {
-        return  this.getMapper().selectByPK(id);
-    }
-
-    default void saveOrUpdate(PO entity) {
-       if(selectByPK((PK)entity.getId()) == null){
-          insert(entity);
-       }else {
-           update(entity);
-       }
-    }
-
 }

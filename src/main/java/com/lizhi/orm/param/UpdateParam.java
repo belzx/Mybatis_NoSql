@@ -18,12 +18,12 @@ public class UpdateParam<E extends CustomEntity> extends Param  implements Seria
         return new UpdateParam();
     }
 
-    public <T extends UpdateParam> T update(E t) {
+    public <T extends UpdateParam> T set(E t) {
         this.updateObject = t;
         return (T) this;
     }
 
-    public <T extends UpdateParam> T update(String column, Object value) {
+    public <T extends UpdateParam> T set(String column, Object value) {
         if (updateObject == null) {
             updateObject = new HashMap<String, Term>();
         }
@@ -39,6 +39,4 @@ public class UpdateParam<E extends CustomEntity> extends Param  implements Seria
     public void setUpdateObject(Object updateObject) {
         this.updateObject = updateObject;
     }
-
-
 }

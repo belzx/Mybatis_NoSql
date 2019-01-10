@@ -1,6 +1,7 @@
 package com.lizhi.orm;
 
 import com.lizhi.orm.param.OrmParam;
+import com.lizhi.orm.param.Param;
 import com.lizhi.orm.param.QueryParam;
 import com.lizhi.orm.term.SortTerm;
 import com.lizhi.orm.term.Term;
@@ -41,28 +42,6 @@ public class OrmSqlGenerator {
 
     protected static final Map<String, String> INSERT_BODY = new HashMap<>();
 
-    protected static final Map<Class, String> simpleName = new HashMap<>();
-
-    static {
-        simpleName.put(Integer.class, "INTEGER");
-        simpleName.put(Byte.class, "byte");
-        simpleName.put(Double.class, "double");
-        simpleName.put(Float.class, "float");
-        simpleName.put(Boolean.class, "boolean");
-        simpleName.put(Long.class, "long");
-        simpleName.put(Short.class, "short");
-        simpleName.put(Character.class, "char");
-        simpleName.put(String.class, "string");
-        simpleName.put(int.class, "int");
-        simpleName.put(double.class, "double");
-        simpleName.put(float.class, "float");
-        simpleName.put(boolean.class, "boolean");
-        simpleName.put(long.class, "long");
-        simpleName.put(short.class, "short");
-        simpleName.put(char.class, "char");
-        simpleName.put(byte.class, "byte");
-    }
-
     private OrmSqlGenerator() {
     }
 
@@ -71,7 +50,7 @@ public class OrmSqlGenerator {
     }
 
     public void processSqlSession(SqlSessionFactory sqlSession) {
-        sqlSession = sqlSession;
+        this.sqlSession = sqlSession;
         for (String resultMapId : sqlSession.getConfiguration().getResultMapNames()) {
             /**获取resultMapId的list ResultMapping*/
             List<ResultMapping> resultMapping = sqlSession.getConfiguration().getResultMap(resultMapId).getResultMappings().stream().filter(d -> {
@@ -122,28 +101,40 @@ public class OrmSqlGenerator {
      * @return
      */
     public String createSelectField(String resultMapId, List<String> cludes, int type) {
-        List<ResultMapping> resultMapping = RESULTMAPPINGS.get(resultMapId);
-
-        //新建
         StringBuilder selectField = new StringBuilder();
+        boolean flag = false;
+        if(type == QueryParam.CONTAIN_INCLUDES){
+            for(String str : cludes){
+                if(flag){
+                    if (!(selectField.length() == 0)) {
+                        selectField.append(" , ");
+                    }
+                }else {
+                    flag = true;
+                }
+                selectField.append(str);
+            }
+            return selectField.toString();
+        }
+
+        List<ResultMapping> resultMapping = RESULTMAPPINGS.get(resultMapId);
         for (ResultMapping resultMap : resultMapping) {
             boolean append = true;
+
             if (type == QueryParam.CONTAIN_EXCLUDES) {
                 if (cludes.contains(resultMap.getColumn())) {
                     append = false;
                 }
-            } else if (type == QueryParam.CONTAIN_INCLUDES) {
-                if (!cludes.contains(resultMap.getColumn())) {
-                    append = false;
+            }
+
+            if(append){
+                if (!(selectField.length() == 0)) {
+                    selectField.append(" , ");
                 }
+//            selectField.append(resultMap.getColumn()).append(" AS ").append(resultMap.getProperty());
+                selectField.append(resultMap.getColumn());
             }
-
-            if (!StringUtils.isEmpty(selectField.toString())) {
-                selectField.append(",");
-            }
-            selectField.append(resultMap.getColumn()).append(" AS ").append(resultMap.getProperty());
         }
-
         return selectField.toString();
     }
 
@@ -181,9 +172,8 @@ public class OrmSqlGenerator {
         StringBuilder insertContent = new StringBuilder();
         resultMapping.stream().forEach(d -> {
             if (insertContent.length() != 0) {
-                insertContent.append(",");
+                insertContent.append(" , ");
             }
-            insertContent.append(d.getColumn());
             insertContent.append("#{t_parameter." + d.getProperty() + "}");
         });
         return insertContent.toString();
@@ -211,6 +201,8 @@ public class OrmSqlGenerator {
             updateField.append(d.getColumn()).append(" = ")
                     .append("#{t_parameter.updateObject.")
                     .append(d.getProperty())
+                    .append(",jdbcType=")
+                    .append(d.getJdbcType())
                     .append("}");
         });
         return updateField.toString();
@@ -235,18 +227,27 @@ public class OrmSqlGenerator {
                         .append(" = ")
                         .append("#{t_parameter.updateObject.")
                         .append(entry.getValue().getColumn())
-                        .append("} ");
+                        .append(".value")
+                        .append("}");
             }
             return updateField.toString();
         }
 
     }
 
-    public String createWhereField(String resultMapId, OrmParam param, Map<String, Term> whereTerms) {
+    /**
+     * in (#{t_parameter.params.0},#{t_parameter.params.1})
+     * @param resultMapId
+     * @param param
+     * @return
+     */
+    public String createWhereField(String resultMapId, OrmParam param) {
+        final Map<String, Term> whereTerms = ((Param)param).getParams();
         final StringBuilder where = new StringBuilder();
 
         Map<String, ResultMapping> stringResultMappingMap = COLUMN_RESULTMAPPING_MAPS.get(resultMapId);
 
+        boolean whereIsNull = false;
         //创建where部分
         for (Map.Entry<String, Term> entry : whereTerms.entrySet()) {
             Term term = entry.getValue();
@@ -255,15 +256,32 @@ public class OrmSqlGenerator {
                     .append(switchTermType(term.getTermType()));
             //分为in 和不是in 两种
             if (term.getTermType() == Term.TermType.in || term.getTermType() == Term.TermType.notin) {
-                where.append(" (")
-                        .append(" #{t_parameter.params.")
-                        .append(entry.getKey()).append(",jdbcType=VARCHAR}) ");
+                int inSize = ((Map) entry.getValue().getValue()).size();
+                boolean flag = false;
+                where.append(" (");
+                for(int i = 0 ; i < inSize ; i ++){
+                    if(flag){
+                        where.append(" , ");
+                    }else {
+                        flag = true;
+                    }
+                    where.append("#{t_parameter.params.")
+                            .append(entry.getKey()).append(".value.").append(i).append("}");
+                }
+                where.append(")");
             } else {
                 ResultMapping resultMapping = stringResultMappingMap.get(term.getColumn());
                 where.append(" #{t_parameter.params.")
-                        .append(entry.getKey()).append(",jdbcType=")
-                        .append(resultMapping == null ? "VARCHAR" : resultMapping.getJdbcType()).append("} ");
+                        .append(entry.getKey()).append(".value");
+                if(resultMapping != null){
+                    where.append(",jdbcType=").append(resultMapping.getJdbcType());
+                }
+                where.append("} ");
             }
+        }
+
+        if(where.length() == 0){
+            whereIsNull = true;
         }
 
         if (param instanceof QueryParam) {
@@ -285,7 +303,7 @@ public class OrmSqlGenerator {
             }
 
             //创建group by
-            if (queryParam.getSorts() != null && !queryParam.getSorts().isEmpty()) {
+            if (queryParam.getGroups() != null && !queryParam.getGroups().isEmpty()) {
                 where.append("\n").append("group by ");
                 boolean flag = false;
                 for (Object group : queryParam.getGroups()) {
@@ -304,9 +322,13 @@ public class OrmSqlGenerator {
                         .append(queryParam.getPageNumber())
                         .append(",")
                         .append(queryParam.getPageNumber() + queryParam.getPageSize());
-
             }
         }
+
+        if(whereIsNull && where.length() > 0){
+            where.insert(0," 1 = 1 ");
+        }
+
         return where.toString();
     }
 

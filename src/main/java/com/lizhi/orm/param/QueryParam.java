@@ -10,13 +10,13 @@ public class QueryParam extends Param  implements Serializable {
 
     private static final long serialVersionUID = 8097500947924037523L;
 
-    public static int CONTAIN_NONE = 0x0;
+    public static int CONTAIN_NONE = 0;
 
-    public static int CONTAIN_INCLUDES = 0x1;
+    public static int CONTAIN_INCLUDES = 1;
 
-    public static int CONTAIN_EXCLUDES = 0x2;
+    public static int CONTAIN_EXCLUDES = 2;
 
-    public static int CONTAIN_GROUP = 0x4;
+    public static int CONTAIN_GROUP = 4;
 
     /**
      * limit pageIndex ，pageSize
@@ -131,32 +131,16 @@ public class QueryParam extends Param  implements Serializable {
         return cludes;
     }
 
-    public void setCludes(List<String> cludes) {
-        this.cludes = cludes;
-    }
-
     public List<SortTerm> getSorts() {
         return sorts;
-    }
-
-    public void setSorts(List<SortTerm> sorts) {
-        this.sorts = sorts;
     }
 
     public List<String> getGroups() {
         return groups;
     }
 
-    public void setGroups(List<String> groups) {
-        this.groups = groups;
-    }
-
     public int getContainFeild() {
         return containFeild;
-    }
-
-    public void setContainFeild(int containFeild) {
-        this.containFeild = containFeild;
     }
 
 

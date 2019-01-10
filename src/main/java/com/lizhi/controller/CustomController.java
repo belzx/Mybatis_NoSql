@@ -3,6 +3,7 @@ package com.lizhi.controller;
 import com.lizhi.bean.*;
 import com.lizhi.orm.param.Param;
 import com.lizhi.orm.param.QueryParam;
+import com.lizhi.orm.param.UpdateParam;
 import com.lizhi.orm.term.SortTerm;
 import com.lizhi.orm.term.Term;
 import com.lizhi.service.CustomService;
@@ -68,10 +69,10 @@ public interface CustomController <M extends CustomEntity,PK > {
     }
 
 
-//    @GetMapping(path = "/ids")
-//    default ResponseMessage<List<M>> getByPrimaryKey(@RequestParam List<PK> ids) {
-//        return ok(assertNotNull(getService().selectByPK(ids)));
-//    }
+    @GetMapping(path = "/ids")
+    default ResponseMessage<List<M>> getByPrimaryKey(@RequestParam List<PK> ids) {
+        return ok(assertNotNull(getService().selectByPKS(ids)));
+    }
 
     static <T> T assertNotNull(T obj) {
         if (null == obj) {
@@ -80,16 +81,15 @@ public interface CustomController <M extends CustomEntity,PK > {
         return obj;
     }
 
-//    @PutMapping(path = "/{id}")
-//    default ResponseMessage<Integer> updateByPrimaryKey(@PathVariable PK id, @RequestBody M data) {
-//        E entity = getService().createEntity();
-//        return ResponseMessage.ok(getService().updateByPK(id, modelToEntity(data, entity)));
-//    }
-//
-//    @PatchMapping
-//    default ResponseMessage<PK> saveOrUpdate(@RequestBody M data) {
-//        E entity = getService().createEntity();
-//        return ResponseMessage.ok(getService().saveOrUpdate(modelToEntity(data, entity)));
-//    }
+    @PutMapping(path = "/{id}")
+    default ResponseMessage<Integer> updateByPrimaryKey(@PathVariable PK id, @RequestBody M data) {
+        data.setId(id);
+        return ResponseMessage.ok(getService().update(UpdateParam.build().set(data)));
+    }
+
+    @PatchMapping
+    default ResponseMessage<Integer> saveOrUpdate(@RequestBody M data) {
+        return ResponseMessage.ok(getService().saveOrUpdate(data));
+    }
 
 }

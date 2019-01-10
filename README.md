@@ -1,10 +1,10 @@
 # lzx-commons
 ## 如何使用
-@Import(LZXAutoConfiguration.class) 
+@Import(ZCommonsAutoConfiguration.class) 
 ~~~
 @EnableScheduling
 @SpringBootApplication
-@Import(LZXAutoConfiguration.class) //扫描
+@Import(ZCommonsAutoConfiguration.class) //扫描到这个class
 @ImportResource("classpath:context.xml")
 public class Application {
     public static void main(String[] args) {
@@ -22,61 +22,72 @@ springboot-mybatis-mysql 框架下的的一套CURD基础框架，支持动态查
       CustomService<Po extends CustomEntity, PK> 
       CustomMapper<Po extends CustomEntity, PK>
   2. 注解导入 @Import(LZXAutoConfiguration.class) 
-  3. 注意要扫描到jar中的/resources/basicmapper.xml
-  4. 按此模板书写创建mapper.后续使用代码生成器。。
+  3. 注意要扫描到jar中的/resources/basic/mapper.xml
+  4. 按此模板创建mapper
   ```xml
-  <?xml version="1.0" encoding="UTF-8"?> <!DOCTYPE mapper PUBLIC "-//testMybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.lizhi.mapper.UserMapper">
-    <resultMap id="BaseResultMap" type="com.lizhi.bean.User">
-        <result column="id" jdbcType="INTEGER" property="id" />
-        <result column="username" jdbcType="VARCHAR" property="username" />
-        <result column="password" jdbcType="VARCHAR" property="password" />
-        <result column="password_salt" jdbcType="VARCHAR" property="salt" />
-        <result column="status" jdbcType="INTEGER" property="status" />
+  <?xml version="1.0" encoding="UTF-8"?>
+  <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="com.lizhi.mapper.BlogLabelMapper">
+    <resultMap id="blogResultMap" type="com.lizhi.bean.BlogLabel">
+      <result column="id" property="id"   javaType="String" jdbcType="VARCHAR"/>
+      <result column="labelName" property="labelName"   javaType="String" jdbcType="VARCHAR"/>
+      <result column="parentId" property="parentId"   javaType="String" jdbcType="VARCHAR"/>
+      <result column="articleId" property="articleId" javaType="String" jdbcType="VARCHAR"/>
     </resultMap>
-
+    <cache></cache>
     <!--用于动态生成sql所需的配置-->
     <sql id="config">
-        <bind name="resultMapId" value="'BaseResultMap'"/>
-        <bind name="tableName" value="'users'"/>
+      <bind name="resultMapId" value="'blogResultMap'"/>
+      <bind name="tableName" value="'t_blog_label'"/>
     </sql>
-
-    <insert id="insert" parameterType="com.lizhi.bean.User">
-        <include refid="config"/>
-        <include refid="BasicMapper.buildInsertSql"/>
+  
+    <insert id="insert" parameterType="com.lizhi.bean.BlogLabel">
+      <include refid="config"/>
+      <include refid="BasicMapper.buildInsertSql"/>
     </insert>
-
-    <insert id="batchInsert" parameterType="com.lizhi.bean.User">
-        <include refid="config"/>
-        <include refid="BasicMapper.buildBatchInsertSql"/>
+  
+    <insert id="batchInsert" parameterType="java.util.List">
+      <include refid="config"/>
+      <include refid="BasicMapper.buildBatchInsertSql"/>
     </insert>
-
+  
     <delete id="deleteByPK" >
-        delete from users where id =#{id}
+          delete from t_blog_label where id =#{id}
+      </delete>
+  
+    <select id="selectByPK"  resultMap="blogResultMap">
+  		select * from t_blog_label where id = #{id}
+  	</select>
+  
+      <select id="selectByPKS" parameterType="java.util.List" resultMap="blogResultMap">
+          <foreach collection="t_list" index="index" item="id"  separator="union all" >
+              select * from t_blog_label where id = #{id}
+          </foreach>
+      </select>
+  
+    <delete id="delete" parameterType="com.lizhi.bean.BlogLabel">
+      <include refid="config"/>
+      <include refid="BasicMapper.buildDeleteSql"/>
     </delete>
-
-    <select id="selectByPK"  resultMap="BaseResultMap">
-		select * from users where id = #{id}
-	</select>
-
-    <delete id="delete" parameterType="com.lizhi.bean.User">
-        <include refid="config"/>
-        <include refid="BasicMapper.buildDeleteSql"/>
-    </delete>
-
-    <update id="update" parameterType="com.lizhi.bean.User">
-        <include refid="config"/>
-        <include refid="BasicMapper.buildUpdateSql"/>
+  
+    <update id="update" parameterType="com.lizhi.bean.BlogLabel">
+      <include refid="config"/>
+      <include refid="BasicMapper.buildUpdateSql"/>
     </update>
-
-    <select id="query" parameterType="com.lizhi.bean.User" resultMap="BaseResultMap">
-        <include refid="config"/>
-        <include refid="BasicMapper.buildSelectSql"/>
+  
+    <select id="query" parameterType="com.lizhi.bean.BlogLabel" resultMap="blogResultMap">
+      <include refid="config"/>
+      <include refid="BasicMapper.buildSelectSql"/>
     </select>
-
-    <select id="count" parameterType="com.lizhi.bean.User" resultType="int">
-        <include refid="config"/>
-        <include refid="BasicMapper.buildTotalSql"/>
+  
+    <select id="queryByJoin" parameterType="com.lizhi.bean.BlogLabel" resultType="java.util.HashMap">
+      <include refid="config"/>
+      <include refid="BasicMapper.buildSelectSql"/>
     </select>
-</mapper>
+  
+    <select id="count" parameterType="com.lizhi.bean.BlogLabel" resultType="int">
+      <include refid="config"/>
+      <include refid="BasicMapper.buildTotalSql"/>
+    </select>
+  </mapper>
 ```

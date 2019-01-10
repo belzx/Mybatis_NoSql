@@ -17,10 +17,6 @@ public class EasyOrmSqlBuilder {
 
     private static OrmSqlGenerator ormSqlGenerator = OrmSqlGenerator.instance();
 
-    public static final String UPDATE_SQL = "%s = #{t_parameter.updateObject.%s}";
-
-    public static final String BASESQL_WHERE = "%s %s #{t_parameter.params.%s.value %s}";
-
     private EasyOrmSqlBuilder() {
 
     }
@@ -79,17 +75,10 @@ public class EasyOrmSqlBuilder {
      * sort by
      */
     public String buildWhere(String resultMapId, Param param) {
-
-        Map<String,Term> wheres;
-        if(param instanceof Param){
-            if(param == null || (wheres = param.getParams()) == null || wheres.isEmpty()){
-                return "";
-            }
-        }else {
-            throw new RuntimeException("参数不能使用 where");
+        if(param == null){
+            return "";
         }
-
-        return ormSqlGenerator.createWhereField(resultMapId,param,wheres);
+        return ormSqlGenerator.createWhereField(resultMapId,param);
     }
 
     /**
@@ -105,7 +94,7 @@ public class EasyOrmSqlBuilder {
         }else if(updateObject instanceof Map){
             return ormSqlGenerator.createUpdateaField(resultMapId,false,(Map<String,Term>)updateObject);
         }else {
-            throw new RuntimeException("更新对象的类型不正确，即不是CustomEntity，也不是Map");
+            throw new RuntimeException("更新对象的类型有误");
         }
     }
 

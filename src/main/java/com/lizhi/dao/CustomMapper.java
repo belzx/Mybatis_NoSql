@@ -7,13 +7,12 @@ import com.lizhi.orm.param.UpdateParam;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 
 public interface CustomMapper<PO extends CustomEntity, PK> {
-    //param名称必须与参数名一致，若不一致，ognl调用方法时会抛错
-
     int insert(@Param("t_parameter") PO t_parameter);
 
-    List<PO> batchInsert(@Param("t_parameters") List<PO> t_parameters);
+    int batchInsert(@Param("t_parameters") List<PO> t_parameters);
 
     int deleteByPK(@Param("id") PK id);
 
@@ -25,5 +24,9 @@ public interface CustomMapper<PO extends CustomEntity, PK> {
 
     List<PO> query(@Param("t_parameter") QueryParam t_parameter);
 
+    List<Map<String,Object>> queryByJoin(@Param("t_parameter") QueryParam t_parameter);
+
     int count(@Param("t_parameter") QueryParam t_parameter);
+
+    List<PO> selectByPKS(@Param("t_list")List<PK> ids);
 }

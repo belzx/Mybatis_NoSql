@@ -6,29 +6,29 @@
 <mapper namespace="BasicMapper">
     <!--通用查询条件-->
     <sql id="buildWhere">
-        ${@com.lizhi.builder.SqlBuilder@current().buildWhere(resultMapId,#this['t_parameter'])}
+        ${@com.lizhi.orm.EasyOrmSqlBuilder@getInstance().buildWhere(resultMapId,#this['t_parameter'])}
     </sql>
 
     <!--生成查询字段-->
     <sql id="buildSelectField">
-        ${@com.lizhi.builder.SqlBuilder@current().buildSelectFields(resultMapId,#this['t_parameter'])}
+        ${@com.lizhi.orm.EasyOrmSqlBuilder@getInstance().buildSelectFields(resultMapId,#this['t_parameter'])}
     </sql>
 
     <!--生成修改字段-->
     <sql id="buildUpdateField">
         <set>
-            ${@com.lizhi.builder.SqlBuilder@current().buildUpdateFields(resultMapId,#this['t_parameter'])}
+            ${@com.lizhi.orm.EasyOrmSqlBuilder@getInstance().buildUpdateFields(resultMapId,#this['t_parameter'])}
         </set>
     </sql>
 
     <!--生成insert的字段 -->
     <sql id="buildInsertField">
-        ${@com.lizhi.builder.SqlBuilder@current().buildInsertField(resultMapId)}
+        ${@com.lizhi.orm.EasyOrmSqlBuilder@getInstance().buildInsertField(resultMapId)}
     </sql>
 
     <!--生成insert的内容 -->
     <sql id="buildInsertContent">
-        ${@com.lizhi.builder.SqlBuilder@current().buildInsertContent(resultMapId)}
+        ${@com.lizhi.orm.EasyOrmSqlBuilder@getInstance().buildInsertContent(resultMapId)}
     </sql>
 
 
