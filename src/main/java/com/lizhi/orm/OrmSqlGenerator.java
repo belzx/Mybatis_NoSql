@@ -14,6 +14,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * sql generator
+ */
 public class OrmSqlGenerator {
 
     private static SqlSessionFactory sqlSession;
@@ -79,7 +82,7 @@ public class OrmSqlGenerator {
         PROPERTY_RESULTMAPPING_MAPS.put(resultMapId, resultMapping.stream().collect(Collectors.toMap(ResultMapping::getProperty, d -> d)));
 
         /**初始化select固定的字符串*/
-        SELECT_FIELD.put(resultMapId, createSelectField(resultMapId, null, QueryParam.CONTAIN_NONE));
+        SELECT_FIELD.put(resultMapId, createSelectField(resultMapId, null, QueryParam.CONTAIN_NONE ,null));
 
         INSERT_FIELD.put(resultMapId, createInsertField(resultMapping));
 
@@ -88,8 +91,12 @@ public class OrmSqlGenerator {
         UPDATE_FIELD.put(resultMapId, createUpdateaField(resultMapping));
     }
 
-    public String createSelectField(String resultMapId) {
-        return SELECT_FIELD.get(resultMapId);
+    public String createSelectField(String resultMapId,String typeAlias) {
+        if(typeAlias == null){
+            return SELECT_FIELD.get(resultMapId);
+        }else {
+           return createSelectField(resultMapId, null, QueryParam.CONTAIN_NONE ,typeAlias);
+        }
     }
 
     /**
@@ -100,7 +107,12 @@ public class OrmSqlGenerator {
      * @param type   0:正常 1：排除 2：包含
      * @return
      */
-    public String createSelectField(String resultMapId, List<String> cludes, int type) {
+    public String createSelectField(String resultMapId, List<String> cludes, int type ,String typeAlias) {
+        if(typeAlias != null){
+            typeAlias  = typeAlias+".";
+        }else {
+            typeAlias = "";
+        }
         StringBuilder selectField = new StringBuilder();
         boolean flag = false;
         if(type == QueryParam.CONTAIN_INCLUDES){
@@ -112,7 +124,7 @@ public class OrmSqlGenerator {
                 }else {
                     flag = true;
                 }
-                selectField.append(str);
+                selectField.append(typeAlias+str);
             }
             return selectField.toString();
         }
@@ -132,7 +144,7 @@ public class OrmSqlGenerator {
                     selectField.append(" , ");
                 }
 //            selectField.append(resultMap.getColumn()).append(" AS ").append(resultMap.getProperty());
-                selectField.append(resultMap.getColumn());
+                selectField.append(typeAlias+resultMap.getColumn());
             }
         }
         return selectField.toString();
@@ -325,9 +337,9 @@ public class OrmSqlGenerator {
             }
         }
 
-        if(whereIsNull && where.length() > 0){
-            where.insert(0," 1 = 1 ");
-        }
+//        if(whereIsNull && where.length() > 0){
+//            where.insert(0," 1 = 1 ");
+//        }
 
         return where.toString();
     }
@@ -366,4 +378,5 @@ public class OrmSqlGenerator {
                 return " = ";
         }
     }
+
 }

@@ -2,6 +2,7 @@ package com.lizhi.orm;
 
 import com.lizhi.bean.CustomEntity;
 import com.lizhi.orm.param.Param;
+import com.lizhi.orm.param.QueryJoinParam;
 import com.lizhi.orm.param.QueryParam;
 import com.lizhi.orm.param.UpdateParam;
 import com.lizhi.orm.term.Term;
@@ -9,6 +10,9 @@ import org.apache.ibatis.session.SqlSessionFactory;
 
 import java.util.*;
 
+/**
+ * sql builder
+ */
 public class EasyOrmSqlBuilder {
 
     volatile static SqlSessionFactory sqlSession;
@@ -21,7 +25,7 @@ public class EasyOrmSqlBuilder {
 
     }
 
-    public static void setSqlSession(SqlSessionFactory sqlSession) {
+    public static void setSqlSessionFactory(SqlSessionFactory sqlSession) {
         EasyOrmSqlBuilder.sqlSession = sqlSession;
         ormSqlGenerator.processSqlSession(sqlSession);
     }
@@ -55,11 +59,29 @@ public class EasyOrmSqlBuilder {
             type = QueryParam.CONTAIN_NONE;
         }
 
-        if(type == QueryParam.CONTAIN_NONE){
-            return ormSqlGenerator.createSelectField(resultMapId);
-        }else {
-            return ormSqlGenerator.createSelectField(resultMapId,cludes, type);
+        String resultselectfield = "";
+        String tableAlias = null;
+        if(param instanceof QueryJoinParam){
+            tableAlias = ((QueryJoinParam) param).getMasterTableAlias();
         }
+
+        if(type == QueryParam.CONTAIN_NONE){
+            resultselectfield =  ormSqlGenerator.createSelectField(resultMapId,tableAlias);
+        }else {
+            resultselectfield =  ormSqlGenerator.createSelectField(resultMapId,cludes, type,tableAlias);
+        }
+
+        if(param instanceof QueryJoinParam){
+            if(((QueryJoinParam) param).getJoinCludes() != null){
+                if(resultselectfield.length() != 0){
+                    resultselectfield +=",";
+                }
+
+                resultselectfield += String.join(" , ",((QueryJoinParam) param).getJoinCludes());
+            }
+        }
+
+        return resultselectfield;
     }
 
 
@@ -79,6 +101,21 @@ public class EasyOrmSqlBuilder {
             return "";
         }
         return ormSqlGenerator.createWhereField(resultMapId,param);
+    }
+
+    /**
+     * 拼接from table1 t1
+     *     join table2 t2 on t1.id = t2.id1
+     *     join table3 t3 on t1.id = t3.id2
+     * @param param
+     * @return
+     */
+    public String buildJoinTableAlias(QueryParam param) {
+        if(param instanceof QueryJoinParam){
+            return  ((QueryJoinParam) param).buildJoinOnField();
+        }else {
+            return "";
+        }
     }
 
     /**

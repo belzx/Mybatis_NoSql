@@ -18,7 +18,11 @@ import java.util.stream.Collectors;
 
 import static com.lizhi.bean.ResponseMessage.ok;
 
-
+/**
+ * 建议配合使用权限框架的前提下再使用此controller
+ * @param <M>
+ * @param <PK>
+ */
 public interface CustomController <M extends CustomEntity,PK > {
 
     CustomService<M,PK> getService();

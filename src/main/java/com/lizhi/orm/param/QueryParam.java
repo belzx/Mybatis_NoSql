@@ -44,6 +44,18 @@ public class QueryParam extends Param  implements Serializable {
      */
     private int containFeild = CONTAIN_NONE;
 
+    public void setCludes(List<String> cludes) {
+        this.cludes = cludes;
+    }
+
+    public void setSorts(List<SortTerm> sorts) {
+        this.sorts = sorts;
+    }
+
+    public void setGroups(List<String> groups) {
+        this.groups = groups;
+    }
+
     public static QueryParam build(){
         return new QueryParam();
     }

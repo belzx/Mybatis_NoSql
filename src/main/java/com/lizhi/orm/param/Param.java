@@ -6,6 +6,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * @Author https://github.com/lizhixiong1994
+ */
 public class Param implements Cloneable, OrmParam {
     /*
      * 参数 .保存where的参数
@@ -41,11 +44,11 @@ public class Param implements Cloneable, OrmParam {
         return where(Term.Type.or, column, Term.TermType.in, value);
     }
 
-    private void addWhere(Term term) {
+    public void addWhere(Term term) {
         params.put(String.valueOf(params.size()), term);
     }
 
-    private void addWhere(String column, Term.Type type, Term.TermType termType, Object value) {
+    public void addWhere(String column, Term.Type type, Term.TermType termType, Object value) {
         if (value != null && Term.TermType.in == termType || Term.TermType.notin == termType) {
             Map<String, Object> map = new HashMap<>();
             if (value instanceof Collection) {
@@ -77,5 +80,9 @@ public class Param implements Cloneable, OrmParam {
 
     public DeleteParam dert() {
         return (DeleteParam)this ;
+    }
+
+    public QueryParam qjert() {
+        return (QueryJoinParam)this ;
     }
 }

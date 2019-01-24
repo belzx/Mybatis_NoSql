@@ -7,6 +7,8 @@ public class SortTerm extends Term {
 
     public static final String ASC = "asc";
 
+    public SortTerm() {
+    }
 
     public SortTerm(String column) {
         super(column,DESC,null,null);

@@ -4,26 +4,25 @@ import com.lizhi.orm.EasyOrmSqlBuilder;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
-
+/**
+ * @Author https://github.com/lizhixiong1994
+ */
 @Component
 @Configuration
 @ComponentScan("com.lizhi")
 public class ZCommonsAutoConfiguration {
     private final static Logger logger = LoggerFactory.getLogger(ZCommonsAutoConfiguration.class);
 
-    @Resource
-    private  SqlSessionFactory sqlSession;
-
     @Bean
-    public EasyOrmSqlBuilder init(){
+    public EasyOrmSqlBuilder init(@Qualifier("sqlSessionFactory") SqlSessionFactory sqlSessionFactory){
         logger.warn("zx commons start!!!");
-        EasyOrmSqlBuilder.setSqlSession(sqlSession);
+        EasyOrmSqlBuilder.setSqlSessionFactory(sqlSessionFactory);
         return EasyOrmSqlBuilder.getInstance();
     }
 }

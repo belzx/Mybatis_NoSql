@@ -6,8 +6,8 @@ public class Term implements Serializable {
     private static final long serialVersionUID = -4341916502392785311L;
     private String column;
     private Object value;
-    private Term.Type type;
-    private Term.TermType termType;
+    private Term.Type type = Term.Type.and;
+    private Term.TermType termType = TermType.eq;
 
     public Term() {
     }

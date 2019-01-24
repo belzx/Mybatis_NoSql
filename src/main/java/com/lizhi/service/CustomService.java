@@ -6,9 +6,6 @@ import com.lizhi.dao.CustomMapper;
 import com.lizhi.orm.param.DeleteParam;
 import com.lizhi.orm.param.QueryParam;
 import com.lizhi.orm.param.UpdateParam;
-import com.lizhi.orm.term.Term;
-import com.lizhi.util.ClassExportValueUtil;
-import com.lizhi.util.ClassUtils;
 import com.lizhi.util.CommonsUtils;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,17 +17,6 @@ import java.util.Map;
 public interface CustomService<PO extends CustomEntity, PK> {
 
     CustomMapper<PO, PK> getMapper();
-
-    /**
-     * 数据导出
-     *
-     * @param params
-     */
-    default List<List<String>> export(QueryParam params) {
-        PagerResult<PO> poPagerResult = this.selectPager(params);
-        List<PO> data = poPagerResult.getData();
-        return ClassExportValueUtil.getReflectValues(data, ClassUtils.getSuperClassGenricType(this.getClass()));
-    }
 
     /**
      * 分页查询

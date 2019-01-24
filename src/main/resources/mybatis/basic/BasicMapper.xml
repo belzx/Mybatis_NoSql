@@ -9,6 +9,10 @@
         ${@com.lizhi.orm.EasyOrmSqlBuilder@getInstance().buildWhere(resultMapId,#this['t_parameter'])}
     </sql>
 
+    <sql id="buildJoinTableAlias">
+        ${@com.lizhi.orm.EasyOrmSqlBuilder@getInstance().buildJoinTableAlias(#this['t_parameter'])}
+    </sql>
+
     <!--生成查询字段-->
     <sql id="buildSelectField">
         ${@com.lizhi.orm.EasyOrmSqlBuilder@getInstance().buildSelectFields(resultMapId,#this['t_parameter'])}
@@ -37,7 +41,7 @@
         <trim>
             select
             <include refid="BasicMapper.buildSelectField"/>
-            from ${tableName}
+            from ${tableName}  <include refid="BasicMapper.buildJoinTableAlias"/>
             <where>
                 <include refid="BasicMapper.buildWhere"/>
             </where>
@@ -89,7 +93,7 @@
     <!--生成查询数量sql-->
     <sql id="buildTotalSql">
         <trim>
-            select count(0) as total from ${tableName}
+            select count(0) as total from ${tableName} <include refid="BasicMapper.buildJoinTableAlias"/>
             <where>
                 <include refid="BasicMapper.buildWhere"/>
             </where>
