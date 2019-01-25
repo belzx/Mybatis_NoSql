@@ -1,7 +1,11 @@
 # lzx-commons
-## 如何使用
-@Import(ZCommonsAutoConfiguration.class) 
+##
+springboot-mybatis-mysql 框架下的的一个CURD小工具，支持动态查询修改,简易上手,直接导入jar即可。
+框架参照[hsweb](https://github.com/hs-web/hsweb-framework/tree/master/hsweb-commons)，
+
+## 如何引入
 ~~~
+//springboot
 @EnableScheduling
 @SpringBootApplication
 @Import(ZCommonsAutoConfiguration.class) //扫描到这个class
@@ -12,10 +16,6 @@ public class Application {
     }
 }
 ~~~
-##
-springboot-mybatis-mysql 框架下的的一套CURD基础框架，支持动态查询修改,简易上手,直接导入jar即可。
-框架参照[hsweb](https://github.com/hs-web/hsweb-framework/tree/master/hsweb-commons)，简化代码，可塑性更高；
-## 使用方法：
   1. 继承各类接口 
       CustomEntity<PK>
       CustomController<Po extends CustomEntity, PK> 
@@ -23,8 +23,10 @@ springboot-mybatis-mysql 框架下的的一套CURD基础框架，支持动态查
       CustomMapper<Po extends CustomEntity, PK>
   2. 注解导入 @Import(LZXAutoConfiguration.class) 
   3. 注意要扫描到jar中的/resources/basic/mapper.xml
-  4. 按此模板创建mapper
-  ```xml
+  4. 创建模板mapper
+
+### 关于mapper如何配置
+```
   <?xml version="1.0" encoding="UTF-8"?>
   <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
   <mapper namespace="com.lizhi.mapper.BlogLabelMapper">
@@ -91,3 +93,47 @@ springboot-mybatis-mysql 框架下的的一套CURD基础框架，支持动态查
     </select>
   </mapper>
 ```
+
+  
+### 一些简单的使用案例
+~~~
+//查询：
+//select ... where label = "前端"
+blogLabelService.select(QueryParam.build().where("labelName", "前端")); 
+
+//select ... where id = "222"
+blogLabelService.selectByPK("222");
+
+//select ... where parentId in ("3","5") or labelName in("前端") order by labelName desc
+blogLabelService.select(QueryParam.build()
+                    .sortDesc("labelName")
+                    .andIn("parentId", Arrays.asList("3","5"))
+                    .orIn("labelName",Arrays.asList("前端")));
+
+blogLabelService.selectByPKS(Arrays.asList("1","2","3"))
+
+//select labelName,count(*) from table group by labelName
+blogLabelService.selectByJoin(QueryParam.build().qert().includes("labelName","count(*)").group("labelName"))
+
+//联表查询
+QueryJoinParam bt = QueryJoinParam.build("bt");
+            bt.includes("id");
+            bt.join("t_blog_label_copy", "tbc")
+                    .on("id", "id")
+                    .joinCludes("id", "ttid")
+                    .group("labelName")
+                    .limit(0,20);
+                    .where("labelName", "前端");
+blogLabelService.select(bt);
+
+//更新：
+//update tablename set labelName  = 1k1 where id = "222"
+blogLabelService.update(UpdateParam.build().set("labelName","lkl").where("id","222"))
+
+//删除
+blogLabelService.delete(DeleteParam.build().where("labelName","kk"));
+
+//插入
+blogLabelService.insert(arrayList)
+
+~~~
