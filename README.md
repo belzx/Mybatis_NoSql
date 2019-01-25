@@ -22,7 +22,7 @@ public class Application {
       CustomService<Po extends CustomEntity, PK> 
       CustomMapper<Po extends CustomEntity, PK>
   2. 注解导入 @Import(LZXAutoConfiguration.class) 
-  3. 注意要扫描到jar中的/resources/basic/mapper.xml
+  3. 注意要扫描到jar中的/resources/basic/BasicMapper.xml
   4. 创建模板mapper
 
 ### 关于mapper如何配置
