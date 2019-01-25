@@ -9,10 +9,6 @@
         ${@com.lizhi.orm.EasyOrmSqlBuilder@getInstance().buildWhere(resultMapId,#this['t_parameter'])}
     </sql>
 
-    <sql id="buildJoinTableAlias">
-        ${@com.lizhi.orm.EasyOrmSqlBuilder@getInstance().buildJoinTableAlias(#this['t_parameter'])}
-    </sql>
-
     <!--生成查询字段-->
     <sql id="buildSelectField">
         ${@com.lizhi.orm.EasyOrmSqlBuilder@getInstance().buildSelectFields(resultMapId,#this['t_parameter'])}
@@ -41,10 +37,8 @@
         <trim>
             select
             <include refid="BasicMapper.buildSelectField"/>
-            from ${tableName}  <include refid="BasicMapper.buildJoinTableAlias"/>
-            <where>
-                <include refid="BasicMapper.buildWhere"/>
-            </where>
+            from ${tableName}
+            <include refid="BasicMapper.buildWhere"/>
         </trim>
     </sql>
 
@@ -52,9 +46,7 @@
     <sql id="buildDeleteSql">
         <trim>
             delete from ${tableName}
-            <where>
-                <include refid="BasicMapper.buildWhere"/>
-            </where>
+            <include refid="BasicMapper.buildWhere"/>
         </trim>
     </sql>
 
@@ -84,20 +76,15 @@
         <trim>
             update ${tableName}
             <include refid="BasicMapper.buildUpdateField"/>
-            <where>
-                <include refid="BasicMapper.buildWhere"/>
-            </where>
+            <include refid="BasicMapper.buildWhere"/>
         </trim>
     </sql>
 
     <!--生成查询数量sql-->
     <sql id="buildTotalSql">
         <trim>
-            select count(0) as total from ${tableName} <include refid="BasicMapper.buildJoinTableAlias"/>
-            <where>
-                <include refid="BasicMapper.buildWhere"/>
-            </where>
-            <!--<include refid="BasicMapper.buildGroupField"/>-->
+            select count(0) as total from ${tableName}
+            <include refid="BasicMapper.buildWhere"/>
         </trim>
     </sql>
 </mapper>

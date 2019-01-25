@@ -2,6 +2,7 @@ package com.lizhi.orm;
 
 import com.lizhi.orm.param.OrmParam;
 import com.lizhi.orm.param.Param;
+import com.lizhi.orm.param.QueryJoinParam;
 import com.lizhi.orm.param.QueryParam;
 import com.lizhi.orm.term.SortTerm;
 import com.lizhi.orm.term.Term;
@@ -248,7 +249,6 @@ public class OrmSqlGenerator {
     }
 
     /**
-     * in (#{t_parameter.params.0},#{t_parameter.params.1})
      * @param resultMapId
      * @param param
      * @return
@@ -259,13 +259,37 @@ public class OrmSqlGenerator {
 
         Map<String, ResultMapping> stringResultMappingMap = COLUMN_RESULTMAPPING_MAPS.get(resultMapId);
 
-        boolean whereIsNull = false;
-        //创建where部分
+        /*
+         * 拼接from table1 t1
+         *     join table2 t2 on t1.id = t2.id1
+         *     join table3 t3 on t1.id = t3.id2
+         */
+        if(param instanceof QueryJoinParam){
+            where.append(((QueryJoinParam) param).buildJoinOnField());
+        }
+
+        /*
+         *创建where部分
+         * 拼接
+         * where id = "1" or userName = "123"
+         */
+        if(!whereTerms.isEmpty()){
+            where.append(" where ");
+        }
+
+        boolean isFrist = true;
+
         for (Map.Entry<String, Term> entry : whereTerms.entrySet()) {
             Term term = entry.getValue();
-            where.append(" ").append(term.getType().name()).append(" ")
-                    .append(term.getColumn())
+            if(isFrist){
+                isFrist = false;
+            }else {
+                where.append(term.getType().name());
+            }
+
+            where.append(" ").append(term.getColumn())
                     .append(switchTermType(term.getTermType()));
+
             //分为in 和不是in 两种
             if (term.getTermType() == Term.TermType.in || term.getTermType() == Term.TermType.notin) {
                 int inSize = ((Map) entry.getValue().getValue()).size();
@@ -280,7 +304,7 @@ public class OrmSqlGenerator {
                     where.append("#{t_parameter.params.")
                             .append(entry.getKey()).append(".value.").append(i).append("}");
                 }
-                where.append(")");
+                where.append(") ");
             } else {
                 ResultMapping resultMapping = stringResultMappingMap.get(term.getColumn());
                 where.append(" #{t_parameter.params.")
@@ -292,10 +316,10 @@ public class OrmSqlGenerator {
             }
         }
 
-        if(where.length() == 0){
-            whereIsNull = true;
-        }
-
+        /*
+         *拼接
+         * order by
+         */
         if (param instanceof QueryParam) {
             QueryParam queryParam = (QueryParam) param;
 
@@ -314,7 +338,10 @@ public class OrmSqlGenerator {
                 }
             }
 
-            //创建group by
+            /*
+             *拼接
+             *group by
+             */
             if (queryParam.getGroups() != null && !queryParam.getGroups().isEmpty()) {
                 where.append("\n").append("group by ");
                 boolean flag = false;
@@ -328,7 +355,11 @@ public class OrmSqlGenerator {
                 }
             }
 
-            //创建limit
+
+            /*
+             *拼接
+             *limit
+             */
             if (queryParam.getPageNumber() != 0 || queryParam.getPageSize() != 0) {
                 where.append("\n").append("limit ")
                         .append(queryParam.getPageNumber())
@@ -337,9 +368,6 @@ public class OrmSqlGenerator {
             }
         }
 
-        if(whereIsNull && where.length() > 0){
-            where.insert(0," 1=1 ");
-        }
 
         return where.toString();
     }

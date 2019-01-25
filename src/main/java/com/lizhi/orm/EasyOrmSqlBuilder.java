@@ -103,20 +103,6 @@ public class EasyOrmSqlBuilder {
         return ormSqlGenerator.createWhereField(resultMapId,param);
     }
 
-    /**
-     * 拼接from table1 t1
-     *     join table2 t2 on t1.id = t2.id1
-     *     join table3 t3 on t1.id = t3.id2
-     * @param param
-     * @return
-     */
-    public String buildJoinTableAlias(QueryParam param) {
-        if(param instanceof QueryJoinParam){
-            return  ((QueryJoinParam) param).buildJoinOnField();
-        }else {
-            return "";
-        }
-    }
 
     /**
      * 更新语句
