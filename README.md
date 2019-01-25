@@ -3,7 +3,7 @@
 springboot-mybatis-mysql 框架下的的一个CURD小工具，支持动态查询修改,简易上手,直接导入jar即可。
 框架参照[hsweb](https://github.com/hs-web/hsweb-framework/tree/master/hsweb-commons)，
 
-## 如何引入
+## 使用说明
 ~~~
 //springboot
 @EnableScheduling
@@ -21,11 +21,11 @@ public class Application {
       CustomController<Po extends CustomEntity, PK> 
       CustomService<Po extends CustomEntity, PK> 
       CustomMapper<Po extends CustomEntity, PK>
-  2. 注解导入 @Import(LZXAutoConfiguration.class) 
+  2. 注解导入 @Import(ZCommonsAutoConfiguration.class) 
   3. 注意要扫描到jar中的/resources/basic/BasicMapper.xml
   4. 创建模板mapper
 
-### 关于mapper如何配置
+### 配置mapper
 ```
   <?xml version="1.0" encoding="UTF-8"?>
   <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
