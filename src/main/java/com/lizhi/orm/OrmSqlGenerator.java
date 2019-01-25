@@ -337,9 +337,9 @@ public class OrmSqlGenerator {
             }
         }
 
-//        if(whereIsNull && where.length() > 0){
-//            where.insert(0," 1 = 1 ");
-//        }
+        if(whereIsNull && where.length() > 0){
+            where.insert(0," 1=1 ");
+        }
 
         return where.toString();
     }
