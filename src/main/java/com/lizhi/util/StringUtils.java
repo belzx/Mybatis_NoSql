@@ -22,7 +22,9 @@ public class StringUtils {
     };
 
     public static String DateToString(Date date) {
-        return threadLocal.get().format(date);
+        String format = threadLocal.get().format(date);
+        threadLocal.remove();
+        return format;
     }
 
     public static boolean isNullOrEmpty(String string) {

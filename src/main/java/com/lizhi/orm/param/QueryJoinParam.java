@@ -11,26 +11,25 @@ import java.util.List;
 /**
  * @Author https://github.com/lizhixiong1994
  * @CreateTime 2019-01-23
- *
+ * <p>
  * 使用于联表查询的参数
  * 如何使用：
- *  QueryJoinParam bt = QueryJoinParam.build("tb");      // 创建QueryJoinParam 对象,tb为tableName的缩写
- *                       bt.includes("id");              //主表的结果只保存id字段
- *                       bt.join("t_label", "tbl")       //联表 t_blog_label 别名为 tbl
- *                           .on("lable_id", "id")       // 联表的关键字
- *                           .joinCludes("name", "labelName")   //增加联表的返回字段
- *                           .group("name")              // group by tbl.name
- *  最后执行结果如下：
- *  select
- *      tb.id,
- *      tbl.name as labelName
- *  from t_blog tb
- *  join t_label tbl on tb.lable_id = tb.id
- *  where
- *  group by tbl.name
- *
+ * QueryJoinParam bt = QueryJoinParam.build("tb");      // 创建QueryJoinParam 对象,tb为tableName的缩写
+ * bt.includes("id");              //主表的结果只保存id字段
+ * bt.join("t_label", "tbl")       //联表 t_blog_label 别名为 tbl
+ * .on("lable_id", "id")       // 联表的关键字
+ * .joinCludes("name", "labelName")   //增加联表的返回字段
+ * .group("name")              // group by tbl.name
+ * 最后执行结果如下：
+ * select
+ * tb.id,
+ * tbl.name as labelName
+ * from t_blog tb
+ * join t_label tbl on tb.lable_id = tb.id
+ * where
+ * group by tbl.name
  */
-public class QueryJoinParam extends QueryParam {
+public class QueryJoinParam extends AbstractQueryParam<QueryJoinParam> {
 
     private static final long serialVersionUID = 2642815643884622464L;
 
@@ -69,7 +68,19 @@ public class QueryJoinParam extends QueryParam {
         fields.append(getMasterTableAlias());
         if (joinOnList != null) {
             for (JoinOn joinOn : joinOnList) {
-                fields.append(" join " + joinOn.getJoinTable() + " " + joinOn.getJoinTableAlias() + " on " + getMasterTableAlias() + "." + joinOn.getMasterTableColum() + "=" + joinOn.getJoinTableAlias() + "." + joinOn.getJoinTableColum() + "\n");
+                fields.append("\tjoin\t");
+                fields.append(joinOn.getJoinTable());
+                fields.append("\t");
+                fields.append(joinOn.getJoinTableAlias());
+                fields.append("\ton\t");
+                fields.append(getMasterTableAlias());
+                fields.append(".");
+                fields.append(joinOn.getMasterTableColum());
+                fields.append("=");
+                fields.append(joinOn.getJoinTableAlias());
+                fields.append(".");
+                fields.append(joinOn.getJoinTableColum());
+                fields.append("\n");
             }
         }
         return fields.toString();
@@ -92,13 +103,12 @@ public class QueryJoinParam extends QueryParam {
 
 
     /**
-     *
      * @param joinTable      联表的表名
      * @param joinTableAlias 联表的别名,默认值为表名
      * @return
      */
     public JoinOn join(String joinTable, String joinTableAlias) {
-        return new JoinOn(joinTable, (StringUtils.isNullOrEmpty(joinTableAlias)?joinTable:joinTableAlias), this);
+        return new JoinOn(joinTable, (StringUtils.isNullOrEmpty(joinTableAlias) ? joinTable : joinTableAlias), this);
     }
 
     public QueryJoinParam setCurrentJoinOn(int index) {
@@ -121,6 +131,7 @@ public class QueryJoinParam extends QueryParam {
 
     /**
      * 重写addWhere
+     *
      * @param term
      */
     @Override
@@ -129,24 +140,26 @@ public class QueryJoinParam extends QueryParam {
         super.addWhere(term);
     }
 
+
     @Override
-    public <T extends QueryParam> T sortDesc(String column) {
+    public QueryJoinParam sortDesc(String column) {
         return super.sortDesc(packageColumn(column));
     }
 
     @Override
-    public <T extends QueryParam> T sortAsc(String column) {
+    public QueryJoinParam sortAsc(String column) {
         return super.sortAsc(packageColumn(column));
     }
 
     @Override
-    public <T extends QueryParam> T group(String column) {
+    public QueryJoinParam group(String column) {
         return super.group(packageColumn(column));
     }
 
     /**
      * 修饰where参数名称
      * 使得 where column = 1 变成 where tableAlias.column = 1
+     *
      * @param column
      * @return
      */
@@ -163,11 +176,15 @@ public class QueryJoinParam extends QueryParam {
      */
     public class JoinOn {
 
-        /**表名*/
+        /**
+         * 表名
+         */
         private String joinTable;
 
-        /**别名*/
-        private  String joinTableAlias;
+        /**
+         * 别名
+         */
+        private String joinTableAlias;
 
 
         private String masterTableColum;
@@ -192,7 +209,6 @@ public class QueryJoinParam extends QueryParam {
          *
          * @param masterTableColum 联表的关键字段 不能为空
          * @param joinTableColum   联表的关键字段 不能为空
-         *
          */
         public QueryJoinParam on(String masterTableColum, String joinTableColum) {
             this.masterTableColum = masterTableColum;

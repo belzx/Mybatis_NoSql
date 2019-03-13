@@ -1,6 +1,7 @@
 package com.lizhi.orm;
 
-import com.lizhi.orm.param.OrmParam;
+import com.lizhi.orm.constans.ConstansSqlType;
+import com.lizhi.orm.param.OParam;
 import com.lizhi.orm.param.Param;
 import com.lizhi.orm.param.QueryJoinParam;
 import com.lizhi.orm.param.QueryParam;
@@ -8,8 +9,10 @@ import com.lizhi.orm.term.SortTerm;
 import com.lizhi.orm.term.Term;
 import org.apache.ibatis.mapping.ResultMapping;
 import org.apache.ibatis.session.SqlSessionFactory;
+import org.apache.ibatis.type.JdbcType;
 import org.springframework.util.StringUtils;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,10 +23,7 @@ import java.util.stream.Collectors;
  */
 public class OrmSqlGenerator {
 
-    private static SqlSessionFactory sqlSession;
-
     private static final OrmSqlGenerator ORM_SQL_GENERATOR = new OrmSqlGenerator();
-
 
     /**
      * resultMapId:(column:object)
@@ -46,16 +46,13 @@ public class OrmSqlGenerator {
 
     protected static final Map<String, String> INSERT_BODY = new HashMap<>();
 
-    private OrmSqlGenerator() {
-    }
-
     public static OrmSqlGenerator instance() {
         return ORM_SQL_GENERATOR;
     }
 
-    public void processSqlSession(SqlSessionFactory sqlSession) {
-        this.sqlSession = sqlSession;
-        for (String resultMapId : sqlSession.getConfiguration().getResultMapNames()) {
+    public final static void processSqlSession(SqlSessionFactory sqlSession) {
+        Collection<String> resultMapNames = sqlSession.getConfiguration().getResultMapNames();
+        for (String resultMapId : resultMapNames) {
             /**获取resultMapId的list ResultMapping*/
             List<ResultMapping> resultMapping = sqlSession.getConfiguration().getResultMap(resultMapId).getResultMappings().stream().filter(d -> {
                 return StringUtils.isEmpty(d.getNestedQueryId());
@@ -72,7 +69,7 @@ public class OrmSqlGenerator {
      *
      * @param resultMapId
      */
-    public void initResultMap(String resultMapId) {
+    public final static void initResultMap(String resultMapId) {
 
         List<ResultMapping> resultMapping = RESULTMAPPINGS.get(resultMapId);
 
@@ -83,7 +80,7 @@ public class OrmSqlGenerator {
         PROPERTY_RESULTMAPPING_MAPS.put(resultMapId, resultMapping.stream().collect(Collectors.toMap(ResultMapping::getProperty, d -> d)));
 
         /**初始化select固定的字符串*/
-        SELECT_FIELD.put(resultMapId, createSelectField(resultMapId, null, QueryParam.CONTAIN_NONE ,null));
+        SELECT_FIELD.put(resultMapId, createSelectField(resultMapId, null, QueryParam.CONTAIN_NONE, null));
 
         INSERT_FIELD.put(resultMapId, createInsertField(resultMapping));
 
@@ -92,11 +89,11 @@ public class OrmSqlGenerator {
         UPDATE_FIELD.put(resultMapId, createUpdateaField(resultMapping));
     }
 
-    public String createSelectField(String resultMapId,String typeAlias) {
-        if(typeAlias == null){
+    public final static String createSelectField(String resultMapId, String typeAlias) {
+        if (typeAlias == null) {
             return SELECT_FIELD.get(resultMapId);
-        }else {
-           return createSelectField(resultMapId, null, QueryParam.CONTAIN_NONE ,typeAlias);
+        } else {
+            return createSelectField(resultMapId, null, QueryParam.CONTAIN_NONE, typeAlias);
         }
     }
 
@@ -108,31 +105,34 @@ public class OrmSqlGenerator {
      * @param type   0:正常 1：排除 2：包含
      * @return
      */
-    public String createSelectField(String resultMapId, List<String> cludes, int type ,String typeAlias) {
-        if(typeAlias != null){
-            typeAlias  = typeAlias+".";
-        }else {
+    public final static String createSelectField(String resultMapId, List<String> cludes, int type, String typeAlias) {
+        if (typeAlias != null) {
+            typeAlias = typeAlias + ".";
+        } else {
             typeAlias = "";
         }
         StringBuilder selectField = new StringBuilder();
         boolean flag = false;
-        if(type == QueryParam.CONTAIN_INCLUDES){
-            for(String str : cludes){
-                if(flag){
+        if (type == QueryParam.CONTAIN_INCLUDES) {
+            for (String str : cludes) {
+                if (flag) {
                     if (!(selectField.length() == 0)) {
                         selectField.append(" , ");
                     }
-                }else {
+                } else {
                     flag = true;
                 }
-                selectField.append(typeAlias+str);
+                selectField
+                        .append(typeAlias)
+                        .append(str);
             }
             return selectField.toString();
         }
 
         List<ResultMapping> resultMapping = RESULTMAPPINGS.get(resultMapId);
+        boolean append;
         for (ResultMapping resultMap : resultMapping) {
-            boolean append = true;
+            append = true;
 
             if (type == QueryParam.CONTAIN_EXCLUDES) {
                 if (cludes.contains(resultMap.getColumn())) {
@@ -140,12 +140,12 @@ public class OrmSqlGenerator {
                 }
             }
 
-            if(append){
+            if (append) {
                 if (!(selectField.length() == 0)) {
-                    selectField.append(" , ");
+                    selectField.append("\t,\t");
                 }
-//            selectField.append(resultMap.getColumn()).append(" AS ").append(resultMap.getProperty());
-                selectField.append(typeAlias+resultMap.getColumn());
+                selectField.append(typeAlias);
+                selectField.append(resultMap.getColumn());
             }
         }
         return selectField.toString();
@@ -158,7 +158,7 @@ public class OrmSqlGenerator {
      * @param resultMapping
      * @return
      */
-    public String createInsertField(List<ResultMapping> resultMapping) {
+    public final static String createInsertField(List<ResultMapping> resultMapping) {
         StringBuilder insertField = new StringBuilder();
         resultMapping.stream().forEach(d -> {
             if (insertField.length() != 0) {
@@ -169,7 +169,7 @@ public class OrmSqlGenerator {
         return insertField.toString();
     }
 
-    public String createInsertField(String resultMapId) {
+    public final static String createInsertField(String resultMapId) {
         return INSERT_FIELD.get(resultMapId);
     }
 
@@ -181,37 +181,38 @@ public class OrmSqlGenerator {
      * @param resultMapping
      * @return
      */
-    public String createInsertBody(List<ResultMapping> resultMapping) {
+    public final static String createInsertBody(List<ResultMapping> resultMapping) {
         StringBuilder insertContent = new StringBuilder();
         resultMapping.stream().forEach(d -> {
             if (insertContent.length() != 0) {
-                insertContent.append(" , ");
+                insertContent.append("\t,\t");
             }
-            insertContent.append("#{t_parameter." + d.getProperty() + "}");
+            insertContent.append("#{t_parameter.")
+                    .append(d.getProperty())
+                    .append("}");
         });
         return insertContent.toString();
     }
 
-    public String createInsertBody(String resultMapId) {
+    public final static String createInsertBody(String resultMapId) {
         return INSERT_BODY.get(resultMapId);
     }
 
     /**
-     * 创建update的fideld部分
      * update tablename set
      * id = #{t_parameter.updateObject.id}
      *
-     * @param resultMapping
      * @return
      */
-    public String createUpdateaField(List<ResultMapping> resultMapping) {
+    public final static String createUpdateaField(List<ResultMapping> resultMapping) {
         /**初始化update固定的字符串*/
         final StringBuilder updateField = new StringBuilder();
         resultMapping.stream().forEach(d -> {
             if (updateField.length() != 0) {
                 updateField.append(",");
             }
-            updateField.append(d.getColumn()).append(" = ")
+
+            updateField.append(d.getColumn()).append("\t=\t")
                     .append("#{t_parameter.updateObject.")
                     .append(d.getProperty())
                     .append(",jdbcType=")
@@ -221,7 +222,9 @@ public class OrmSqlGenerator {
         return updateField.toString();
     }
 
-    public String createUpdateaField(String resultMapId, boolean isCustomEntity, Map<String, Term> terms) {
+    public final static String createUpdateaField(String resultMapId, boolean isCustomEntity, Map<String, Term> terms) {
+        Map<String, ResultMapping> stringResultMappingMap = COLUMN_RESULTMAPPING_MAPS.get(resultMapId);
+
         if (isCustomEntity) {
             return UPDATE_FIELD.get(resultMapId);
         } else {
@@ -230,22 +233,33 @@ public class OrmSqlGenerator {
                 return updateField.toString();
             }
             boolean flag = false;
+            String column;
+            ResultMapping resultMapping;
+            JdbcType jdbcType;
             for (Map.Entry<String, Term> entry : terms.entrySet()) {
                 if (flag) {
-                    updateField.append(" , ");
+                    updateField.append("\t,\t");
                 } else {
                     flag = true;
                 }
-                updateField.append(entry.getValue().getColumn())
-                        .append(" = ")
+                column = entry.getValue().getColumn();
+                resultMapping = stringResultMappingMap.get(column);
+                updateField.append(column)
+                        .append("\t=\t")
                         .append("#{t_parameter.updateObject.")
-                        .append(entry.getValue().getColumn())
-                        .append(".value")
-                        .append("}");
+                        .append(column)
+                        .append(".value");
+
+                if (resultMapping != null) {
+                    jdbcType = resultMapping.getJdbcType();
+                    if (jdbcType != null) {
+                        updateField.append(",jdbcType=").append(jdbcType);
+                    }
+                }
+                updateField.append("}\t");
             }
             return updateField.toString();
         }
-
     }
 
     /**
@@ -253,101 +267,100 @@ public class OrmSqlGenerator {
      * @param param
      * @return
      */
-    public String createWhereField(String resultMapId, OrmParam param) {
-        final Map<String, Term> whereTerms = ((Param)param).getParams();
+    public final static String createWhereField(String resultMapId, Param param) {
+        final Map<String, Term> whereTerms = ((OParam) param).getParams();
         final StringBuilder where = new StringBuilder();
 
         Map<String, ResultMapping> stringResultMappingMap = COLUMN_RESULTMAPPING_MAPS.get(resultMapId);
 
         /*
-         * 拼接from table1 t1
+         * from table1 t1
          *     join table2 t2 on t1.id = t2.id1
          *     join table3 t3 on t1.id = t3.id2
          */
-        if(param instanceof QueryJoinParam){
+        if (param instanceof QueryJoinParam) {
             where.append(((QueryJoinParam) param).buildJoinOnField());
         }
 
         /*
-         *创建where部分
-         * 拼接
          * where id = "1" or userName = "123"
          */
-        if(!whereTerms.isEmpty()){
-            where.append(" where ");
+        if (!whereTerms.isEmpty()) {
+            where.append("\twhere\t");
         }
 
         boolean isFrist = true;
+        boolean flag = false;
+        Term term = null;
+        ResultMapping resultMapping = null;
+        JdbcType jdbcType = null;
 
         for (Map.Entry<String, Term> entry : whereTerms.entrySet()) {
-            Term term = entry.getValue();
-            if(isFrist){
+            term = entry.getValue();
+            if (isFrist) {
                 isFrist = false;
-            }else {
+            } else {
                 where.append(term.getType().name());
             }
+            where.append("\t")
+                    .append(term.getColumn())
+                    .append(ConstansSqlType.getDesc(term.getTermType()));
 
-            where.append(" ").append(term.getColumn())
-                    .append(switchTermType(term.getTermType()));
 
-            //分为in 和不是in 两种
+            resultMapping = stringResultMappingMap.get(term.getColumn());
+            if (resultMapping != null) {
+                jdbcType = resultMapping.getJdbcType();
+            }
+
+            //分为in notin 和 其他 两种
             if (term.getTermType() == Term.TermType.in || term.getTermType() == Term.TermType.notin) {
                 int inSize = ((Map) entry.getValue().getValue()).size();
-                boolean flag = false;
-                where.append(" (");
-                for(int i = 0 ; i < inSize ; i ++){
-                    if(flag){
-                        where.append(" , ");
-                    }else {
+                flag = false;
+                where.append("\t(");
+                for (int i = 0; i < inSize; i++) {
+                    if (flag) {
+                        where.append("\t,\t");
+                    } else {
                         flag = true;
                     }
-                    where.append("#{t_parameter.params.")
-                            .append(entry.getKey()).append(".value.").append(i).append("}");
+                    appendWhereParameter(where, entry.getKey(), resultMapping, jdbcType);
                 }
-                where.append(") ");
+                where.append(")\t");
             } else {
-                ResultMapping resultMapping = stringResultMappingMap.get(term.getColumn());
-                where.append(" #{t_parameter.params.")
-                        .append(entry.getKey()).append(".value");
-                if(resultMapping != null){
-                    where.append(",jdbcType=").append(resultMapping.getJdbcType());
-                }
-                where.append("} ");
+                appendWhereParameter(where, entry.getKey(), resultMapping, jdbcType);
             }
         }
 
         /*
-         *拼接
          * order by
          */
         if (param instanceof QueryParam) {
             QueryParam queryParam = (QueryParam) param;
-
             //创建sort
             if (queryParam.getSorts() != null && !queryParam.getSorts().isEmpty()) {
-                where.append("\n").append("order by ");
-                boolean flag = false;
+                where.append("\n").append("order by\t");
+                flag = false;
                 for (Object sortTerm : queryParam.getSorts()) {
                     if (flag) {
-                        where.append(" , ");
+                        where.append("\t,\t");
                     } else {
                         flag = true;
                     }
-                    where.append(((SortTerm) sortTerm).getColumn()).append(" ")
+                    where.append(((SortTerm) sortTerm).getColumn())
+                            .append("\t")
                             .append(((SortTerm) sortTerm).getValue());
                 }
             }
 
             /*
-             *拼接
              *group by
              */
             if (queryParam.getGroups() != null && !queryParam.getGroups().isEmpty()) {
-                where.append("\n").append("group by ");
-                boolean flag = false;
+                where.append("\n").append("group by\t");
+                flag = false;
                 for (Object group : queryParam.getGroups()) {
                     if (flag) {
-                        where.append(" , ");
+                        where.append("\t,\t");
                     } else {
                         flag = true;
                     }
@@ -355,56 +368,30 @@ public class OrmSqlGenerator {
                 }
             }
 
-
             /*
-             *拼接
              *limit
              */
             if (queryParam.getPageNumber() != 0 || queryParam.getPageSize() != 0) {
-                where.append("\n").append("limit ")
+                where.append("\n")
+                        .append("limit\t")
                         .append(queryParam.getPageNumber())
                         .append(",")
                         .append(queryParam.getPageNumber() + queryParam.getPageSize());
             }
         }
-
-
         return where.toString();
     }
 
-    public final static String switchTermType(Term.TermType termType) {
-        switch (termType) {
-            case eq:
-                return " = ";
-            case neq:
-                return " <> ";
-            case lt:
-                return " < ";
-            case lte:
-                return " <= ";
-            case gt:
-                return " > ";
-            case gte:
-                return " >= ";
-            case isnull:
-                return " is null ";
-            case isvoid:
-                return " = \"\" ";
-            case notnull:
-                return " is not null ";
-            case notvoid:
-                return " <> \"\" ";
-            case in:
-                return " in ";
-            case notin:
-                return " not in ";
-            case like:
-                return " like ";
-            case notlike:
-                return "not like ";
-            default:
-                return " = ";
+    /**
+     * " where id = #{t_parameter.params.id.value,jdbcType = VARCHAR")
+     */
+    public final static void appendWhereParameter(StringBuilder str, String key, ResultMapping resultMapping, JdbcType jdbcType) {
+        str.append(" #{t_parameter.params.")
+                .append(key)
+                .append(".value");
+        if (jdbcType != null) {
+            str.append(",jdbcType=").append(jdbcType);
         }
+        str.append("}\t");
     }
-
 }

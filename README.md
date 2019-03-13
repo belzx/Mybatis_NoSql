@@ -5,25 +5,16 @@ springboot-mybatis-mysql 框架下的的一个CURD小工具，支持动态查询
 
 ## 使用说明
 ~~~
-//springboot
-@EnableScheduling
-@SpringBootApplication
-@Import(ZCommonsAutoConfiguration.class) //扫描到这个class
-@ImportResource("classpath:context.xml")
-public class Application {
-    public static void main(String[] args) {
-        ConfigurableApplicationContext run = SpringApplication.run(Application.class, args);
-    }
-}
+已经配置号META-INF
+依赖即可使用
 ~~~
   1. 继承各类接口 
       CustomEntity<PK>
-      CustomController<Po extends CustomEntity, PK> 
-      CustomService<Po extends CustomEntity, PK> 
-      CustomMapper<Po extends CustomEntity, PK>
-  2. 注解导入 @Import(ZCommonsAutoConfiguration.class) 
-  3. 注意要扫描到jar中的/resources/basic/BasicMapper.xml
-  4. 创建模板mapper
+      CustomController<Po extends Entity, PK> 
+      CustomService<Po extends Entity, PK> 
+      CustomMapper<Po extends Entity, PK>
+  2. 注意要扫描到jar中的/resources/basic/BasicMapper.xml
+  3. 创建模板mapper
 
 ### 配置mapper
 ```
@@ -107,8 +98,8 @@ blogLabelService.selectByPK("222");
 //select ... where parentId in ("3","5") or labelName in("前端") order by labelName desc
 blogLabelService.select(QueryParam.build()
                     .sortDesc("labelName")
-                    .andIn("parentId", Arrays.asList("3","5"))
-                    .orIn("labelName",Arrays.asList("前端")));
+                    .and("parentId", Arrays.asList("3","5"))
+                    .and("labelName",Arrays.asList("前端")));
 
 blogLabelService.selectByPKS(Arrays.asList("1","2","3"))
 

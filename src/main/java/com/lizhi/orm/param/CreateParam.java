@@ -9,7 +9,7 @@ import java.util.Collection;
 import java.util.List;
 
 
-public class CreateParam<E extends CustomEntity> implements OrmParam, Serializable {
+public class CreateParam<E extends CustomEntity> implements Param, Serializable {
 
     private static final long serialVersionUID = 8097500947924037523L;
 

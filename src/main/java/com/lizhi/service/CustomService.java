@@ -1,10 +1,11 @@
 package com.lizhi.service;
 
-import com.lizhi.bean.CustomEntity;
+import com.lizhi.bean.Entity;
+import com.lizhi.bean.EntityWithPrimary;
 import com.lizhi.bean.PagerResult;
 import com.lizhi.dao.CustomMapper;
+import com.lizhi.orm.param.AbstractQueryParam;
 import com.lizhi.orm.param.DeleteParam;
-import com.lizhi.orm.param.QueryParam;
 import com.lizhi.orm.param.UpdateParam;
 import com.lizhi.util.CommonsUtils;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,24 +15,22 @@ import java.util.List;
 import java.util.Map;
 
 @Transactional(rollbackFor = Throwable.class)
-public interface CustomService<PO extends CustomEntity, PK> {
+public interface CustomService<PO extends Entity, PK> {
 
     CustomMapper<PO, PK> getMapper();
 
     /**
      * 分页查询
-     *
-     * @param params
      */
-    default PagerResult<PO> selectPager(QueryParam params) {
+    default PagerResult<PO> selectPager(AbstractQueryParam params) {
         PagerResult<PO> result = new PagerResult<>();
-        int count = getMapper().count((QueryParam) params);
+        int count = getMapper().count(params);
         if (count == 0) {
             result.setData(new ArrayList<>());
             result.setTotal(0);
         } else {
             result.setTotal(count);
-            params.setPageNumber(CommonsUtils.parseSkip(params.getPageNumber(),params.getPageSize(),count));
+            params.setPageNumber(CommonsUtils.parseSkip(params.getPageNumber(), params.getPageSize(), count));
             result.setData(select(params));
         }
         return result;
@@ -39,29 +38,25 @@ public interface CustomService<PO extends CustomEntity, PK> {
 
     /**
      * 不分页查询
-     * @param params
      */
     @Transactional(readOnly = true)
-    default List<PO> select(QueryParam params) {
-        return this.getMapper().query((QueryParam) params);
+    default List<PO> select(AbstractQueryParam params) {
+        return this.getMapper().query(params);
     }
 
     @Transactional(readOnly = true)
-    default List<Map<String, Object>> selectByJoin(QueryParam params) {
-        return this.getMapper().queryByJoin((QueryParam) params);
+    default List<Map<String, Object>> selectByJoin(AbstractQueryParam params) {
+        return this.getMapper().queryByJoin(params);
     }
 
     @Transactional(readOnly = true)
-    default int count(QueryParam param) {
-        return getMapper().count((QueryParam) param);
+    default int count(AbstractQueryParam param) {
+        return getMapper().count(param);
     }
 
     @Transactional(readOnly = true)
-    default PO selectSingle(QueryParam params) {
-        PagerResult<PO> result = new PagerResult<>();
-        params.setPageNumber(0);
-        params.setPageSize(1);
-        List<PO> select = this.query((QueryParam) params);
+    default PO selectSingle(AbstractQueryParam params) {
+        List<PO> select = this.query(params);
         if (select == null || select.isEmpty()) {
             return null;
         } else {
@@ -80,12 +75,12 @@ public interface CustomService<PO extends CustomEntity, PK> {
     }
 
     @Transactional(readOnly = true)
-    default List<PO> query(QueryParam param) {
-        return getMapper().query((QueryParam) param);
+    default List<PO> query(AbstractQueryParam param) {
+        return getMapper().query(param);
     }
 
     default int insert(PO entity) {
-        return getMapper().insert((PO) entity);
+        return getMapper().insert(entity);
     }
 
     default int insert(List<PO> entityList) {
@@ -93,10 +88,10 @@ public interface CustomService<PO extends CustomEntity, PK> {
     }
 
     default int delete(DeleteParam param) {
-        return getMapper().delete((DeleteParam) param);
+        return getMapper().delete(param);
     }
 
-    default int update(PO entity) {
+    default <PO extends EntityWithPrimary> int updateByPK(PO entity) {
         UpdateParam updateParam = UpdateParam.build();
         updateParam.set(entity);
         if (entity.getId() == null) {
@@ -112,14 +107,14 @@ public interface CustomService<PO extends CustomEntity, PK> {
     }
 
     default int update(UpdateParam updateParam) {
-        return getMapper().update((UpdateParam) updateParam);
+        return getMapper().update(updateParam);
     }
 
-    default int saveOrUpdate(PO entity) {
+    default <PG extends EntityWithPrimary> int saveOrUpdate(PG entity) {
         if (selectByPK((PK) entity.getId()) == null) {
-           return insert(entity);
+            return insert((PO) entity);
         } else {
-           return update(entity);
+            return updateByPK(entity);
         }
     }
 }

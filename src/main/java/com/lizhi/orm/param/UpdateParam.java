@@ -2,13 +2,14 @@ package com.lizhi.orm.param;
 
 
 import com.lizhi.bean.CustomEntity;
+import com.lizhi.bean.Entity;
 import com.lizhi.orm.term.Term;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class UpdateParam<E extends CustomEntity> extends Param  implements Serializable {
+public class UpdateParam extends OParam<UpdateParam> implements Serializable {
 
     private static final long serialVersionUID = 8097500947924037523L;
 
@@ -18,17 +19,17 @@ public class UpdateParam<E extends CustomEntity> extends Param  implements Seria
         return new UpdateParam();
     }
 
-    public <T extends UpdateParam> T set(E t) {
+    public <E extends Entity> UpdateParam set(E t) {
         this.updateObject = t;
-        return (T) this;
+        return this;
     }
 
-    public <T extends UpdateParam> T set(String column, Object value) {
+    public UpdateParam set(String column, Object value) {
         if (updateObject == null) {
             updateObject = new HashMap<String, Term>();
         }
         ((Map<String, Term>) updateObject).put(column, new Term(column, value, null, null));
-        return (T) this;
+        return  this;
     }
 
 

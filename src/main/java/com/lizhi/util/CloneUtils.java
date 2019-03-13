@@ -17,7 +17,7 @@ public class CloneUtils {
      * @param <T>
      * @return
      */
-    public static <T extends Serializable> T clone(T obj) throws NotSerializableException{
+    public static <T extends Serializable> T clone(T obj) throws NotSerializableException,Exception{
         T cloneObj = null;
         if (obj == null) {
             return cloneObj;
@@ -41,7 +41,7 @@ public class CloneUtils {
         } catch (NotSerializableException e) {
             throw e;
         } catch (Exception e) {
-            LOGGER.error("", e);
+            throw e;
         } finally {
             StreamUtils.close(ois, ios, obs, out);
         }

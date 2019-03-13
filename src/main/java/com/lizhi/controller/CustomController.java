@@ -1,7 +1,7 @@
 package com.lizhi.controller;
 
 import com.lizhi.bean.*;
-import com.lizhi.orm.param.Param;
+import com.lizhi.orm.param.OParam;
 import com.lizhi.orm.param.QueryParam;
 import com.lizhi.orm.param.UpdateParam;
 import com.lizhi.orm.term.SortTerm;
@@ -11,7 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -52,7 +51,7 @@ public interface CustomController <M extends CustomEntity,PK > {
         return ok(assertNotNull(getService().selectByPK(id)));
     }
 
-    default Map<String,Object> getParams(Param curdParam) {
+    default Map<String,Object> getParams(OParam curdParam) {
         Map params = curdParam.getParams();
         if(params == null){
             return null;
