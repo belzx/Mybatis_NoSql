@@ -12,10 +12,7 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.type.JdbcType;
 import org.springframework.util.StringUtils;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -89,13 +86,13 @@ public class OrmSqlGenerator {
         UPDATE_FIELD.put(resultMapId, createUpdateaField(resultMapping));
     }
 
-    public final static String createSelectField(String resultMapId, String typeAlias) {
-        if (typeAlias == null) {
-            return SELECT_FIELD.get(resultMapId);
-        } else {
-            return createSelectField(resultMapId, null, QueryParam.CONTAIN_NONE, typeAlias);
-        }
-    }
+//    public final static String createSelectField(String resultMapId, String tableAlias) {
+//        if (tableAlias == null) {
+//            return SELECT_FIELD.get(resultMapId);
+//        } else {
+//            return createSelectField(resultMapId, null, QueryParam.CONTAIN_NONE, tableAlias);
+//        }
+//    }
 
     /**
      * 创建查询selelct 的字段
@@ -105,47 +102,38 @@ public class OrmSqlGenerator {
      * @param type   0:正常 1：排除 2：包含
      * @return
      */
-    public final static String createSelectField(String resultMapId, List<String> cludes, int type, String typeAlias) {
-        if (typeAlias != null) {
-            typeAlias = typeAlias + ".";
+    public final static String createSelectField(String resultMapId, Set<String> cludes, int type, String tableAlias) {
+        if (tableAlias != null) {
+            tableAlias = tableAlias + ".";
         } else {
-            typeAlias = "";
+            tableAlias = "";
         }
         StringBuilder selectField = new StringBuilder();
         boolean flag = false;
         if (type == QueryParam.CONTAIN_INCLUDES) {
             for (String str : cludes) {
                 if (flag) {
-                    if (!(selectField.length() == 0)) {
-                        selectField.append(" , ");
-                    }
+                    selectField.append("\t,\t");
                 } else {
                     flag = true;
                 }
                 selectField
-                        .append(typeAlias)
+                        .append(tableAlias)
                         .append(str);
             }
-            return selectField.toString();
-        }
-
-        List<ResultMapping> resultMapping = RESULTMAPPINGS.get(resultMapId);
-        boolean append;
-        for (ResultMapping resultMap : resultMapping) {
-            append = true;
-
-            if (type == QueryParam.CONTAIN_EXCLUDES) {
-                if (cludes.contains(resultMap.getColumn())) {
-                    append = false;
+        } else if (type == QueryParam.CONTAIN_EXCLUDES) {
+            List<ResultMapping> resultMapping = RESULTMAPPINGS.get(resultMapId);
+            for (ResultMapping resultMap : resultMapping) {
+                if (!cludes.contains(resultMap.getColumn())) {
+                    if (flag) {
+                        selectField.append("\t,\t");
+                    } else {
+                        flag = true;
+                    }
+                    selectField
+                            .append(tableAlias)
+                            .append(resultMap.getColumn());
                 }
-            }
-
-            if (append) {
-                if (!(selectField.length() == 0)) {
-                    selectField.append("\t,\t");
-                }
-                selectField.append(typeAlias);
-                selectField.append(resultMap.getColumn());
             }
         }
         return selectField.toString();
@@ -314,6 +302,7 @@ public class OrmSqlGenerator {
 
             //分为in notin 和 其他 两种
             if (term.getTermType() == Term.TermType.in || term.getTermType() == Term.TermType.notin) {
+                // where id in (#{t_parameter.params.0.value.1,jdbcType = VARCHAR"),#{t_parameter.params.0.value.2,jdbcType = VARCHAR"))
                 int inSize = ((Map) entry.getValue().getValue()).size();
                 flag = false;
                 where.append("\t(");
@@ -323,11 +312,26 @@ public class OrmSqlGenerator {
                     } else {
                         flag = true;
                     }
-                    appendWhereParameter(where, entry.getKey(), resultMapping, jdbcType);
+
+                    where.append(" #{t_parameter.params.")
+                            .append( entry.getKey())
+                            .append(".value.")
+                            .append(i);
+                    if (jdbcType != null) {
+                        where.append(",jdbcType=").append(jdbcType);
+                    }
+                    where.append("}\t");
                 }
                 where.append(")\t");
             } else {
-                appendWhereParameter(where, entry.getKey(), resultMapping, jdbcType);
+                // where id = #{t_parameter.params.0.value,jdbcType = VARCHAR")
+                where.append(" #{t_parameter.params.")
+                        .append( entry.getKey())
+                        .append(".value");
+                if (jdbcType != null) {
+                    where.append(",jdbcType=").append(jdbcType);
+                }
+                where.append("}\t");
             }
         }
 
@@ -380,18 +384,5 @@ public class OrmSqlGenerator {
             }
         }
         return where.toString();
-    }
-
-    /**
-     * " where id = #{t_parameter.params.id.value,jdbcType = VARCHAR")
-     */
-    public final static void appendWhereParameter(StringBuilder str, String key, ResultMapping resultMapping, JdbcType jdbcType) {
-        str.append(" #{t_parameter.params.")
-                .append(key)
-                .append(".value");
-        if (jdbcType != null) {
-            str.append(",jdbcType=").append(jdbcType);
-        }
-        str.append("}\t");
     }
 }

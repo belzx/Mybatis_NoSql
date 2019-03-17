@@ -39,7 +39,7 @@ public class QueryJoinParam extends AbstractQueryParam<QueryJoinParam> {
     //主表
     private JoinOn masterJoinOn;
 
-    //不知道描述
+    //返回字段 a.id,b.oo,a.userName
     private List<String> joinCludes;
 
     private List<JoinOn> joinOnList;
@@ -52,6 +52,15 @@ public class QueryJoinParam extends AbstractQueryParam<QueryJoinParam> {
     public static QueryJoinParam build(String tableALias) {
         CommonAssert.notNullOrEmpty(tableALias, "tableALias can not be null or empty");
         return new QueryJoinParam(tableALias);
+    }
+
+    /**
+     * @param joinTableName      联表的表名
+     * @param joinTableAlias 联表的别名,默认值为表名
+     * @return
+     */
+    public JoinOn join(String joinTableName, String joinTableAlias) {
+        return new JoinOn(joinTableName, (StringUtils.isNullOrEmpty(joinTableAlias) ? joinTableName : joinTableAlias), this);
     }
 
     public List<String> getJoinCludes() {
@@ -69,7 +78,7 @@ public class QueryJoinParam extends AbstractQueryParam<QueryJoinParam> {
         if (joinOnList != null) {
             for (JoinOn joinOn : joinOnList) {
                 fields.append("\tjoin\t");
-                fields.append(joinOn.getJoinTable());
+                fields.append(joinOn.getJoinTableName());
                 fields.append("\t");
                 fields.append(joinOn.getJoinTableAlias());
                 fields.append("\ton\t");
@@ -102,14 +111,6 @@ public class QueryJoinParam extends AbstractQueryParam<QueryJoinParam> {
     }
 
 
-    /**
-     * @param joinTable      联表的表名
-     * @param joinTableAlias 联表的别名,默认值为表名
-     * @return
-     */
-    public JoinOn join(String joinTable, String joinTableAlias) {
-        return new JoinOn(joinTable, (StringUtils.isNullOrEmpty(joinTableAlias) ? joinTable : joinTableAlias), this);
-    }
 
     public QueryJoinParam setCurrentJoinOn(int index) {
         JoinOn joinOn = joinOnList.get(index);
@@ -168,7 +169,7 @@ public class QueryJoinParam extends AbstractQueryParam<QueryJoinParam> {
     }
 
     private String packageColumn(String column, String returnAlias) {
-        return packageColumn(column) + " as " + returnAlias;
+        return packageColumn(column) + "\tas\t" + returnAlias;
     }
 
     /**
@@ -179,7 +180,7 @@ public class QueryJoinParam extends AbstractQueryParam<QueryJoinParam> {
         /**
          * 表名
          */
-        private String joinTable;
+        private String joinTableName;
 
         /**
          * 别名
@@ -196,9 +197,9 @@ public class QueryJoinParam extends AbstractQueryParam<QueryJoinParam> {
          */
         private QueryJoinParam queryJoinParam;
 
-        public JoinOn(String joinTable, String joinTableAlias, QueryJoinParam queryJoinParam) {
+        public JoinOn(String joinTableName, String joinTableAlias, QueryJoinParam queryJoinParam) {
             this.queryJoinParam = queryJoinParam;
-            this.joinTable = joinTable;
+            this.joinTableName = joinTableName;
             this.joinTableAlias = joinTableAlias;
         }
 
@@ -222,8 +223,8 @@ public class QueryJoinParam extends AbstractQueryParam<QueryJoinParam> {
             return joinTableAlias;
         }
 
-        public String getJoinTable() {
-            return joinTable;
+        public String getJoinTableName() {
+            return joinTableName;
         }
 
         public String getMasterTableColum() {

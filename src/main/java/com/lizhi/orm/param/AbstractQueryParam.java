@@ -3,7 +3,9 @@ package com.lizhi.orm.param;
 import com.lizhi.orm.term.SortTerm;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class AbstractQueryParam<T extends AbstractQueryParam> extends OParam<T> {
 
@@ -30,29 +32,16 @@ public class AbstractQueryParam<T extends AbstractQueryParam> extends OParam<T> 
      * CONTAIN_EXCLUDES 剔除
      * 只包含的字段
      */
-    private List<String> cludes;
+    private Set<String> cludes;
 
     private List<SortTerm> sorts;
 
-    private List<String> groups;
+    private Set<String> groups;
 
     /**
      * 是否包含字段筛选。下面两个是互斥关系
      */
     private int containFeild = CONTAIN_NONE;
-
-    public void setCludes(List<String> cludes) {
-        this.cludes = cludes;
-    }
-
-    public void setSorts(List<SortTerm> sorts) {
-        this.sorts = sorts;
-    }
-
-    public void setGroups(List<String> groups) {
-        this.groups = groups;
-    }
-
 
     public T excludes(String... columns) {
         for (String column : columns) {
@@ -92,7 +81,7 @@ public class AbstractQueryParam<T extends AbstractQueryParam> extends OParam<T> 
 
     private void cludes(String column, int type) {
         if (cludes == null) {
-            cludes = new ArrayList<>();
+            cludes = new HashSet<>();
         }
 
         if (containFeild != type) {
@@ -112,7 +101,7 @@ public class AbstractQueryParam<T extends AbstractQueryParam> extends OParam<T> 
 
     private void addGroup(String group) {
         if (groups == null) {
-            groups = new ArrayList<>();
+            groups = new HashSet<>();
         }
         groups.add(group);
     }
@@ -133,16 +122,32 @@ public class AbstractQueryParam<T extends AbstractQueryParam> extends OParam<T> 
         this.pageSize = pageSize;
     }
 
-    public List<String> getCludes() {
+    public Set<String> getCludes() {
         return cludes;
+    }
+
+    public void setCludes(Set<String> cludes) {
+        this.cludes = cludes;
     }
 
     public List<SortTerm> getSorts() {
         return sorts;
     }
 
-    public List<String> getGroups() {
+    public void setSorts(List<SortTerm> sorts) {
+        this.sorts = sorts;
+    }
+
+    public Set<String> getGroups() {
         return groups;
+    }
+
+    public void setGroups(Set<String> groups) {
+        this.groups = groups;
+    }
+
+    public void setContainFeild(int containFeild) {
+        this.containFeild = containFeild;
     }
 
     public int getContainFeild() {

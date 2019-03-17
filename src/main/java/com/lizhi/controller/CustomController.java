@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.lizhi.bean.ResponseMessage.ok;
@@ -67,7 +68,7 @@ public interface CustomController <M extends CustomEntity,PK > {
         return  (LinkedHashMap<String,Object>) sorts.stream().collect(Collectors.toMap(SortTerm::getColumn, SortTerm::getValue));
     }
 
-    default List<String> getGroups(QueryParam curdParam) {
+    default Set<String> getGroups(QueryParam curdParam) {
         return curdParam.getGroups();
     }
 

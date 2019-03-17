@@ -6,6 +6,7 @@ import com.lizhi.orm.term.Term;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * sql builder
@@ -27,7 +28,7 @@ public class EasyOrmSqlBuilder {
      * @return  id as id，inickName as inickName 。。。
      */
     public String buildSelectFields(String resultMapId, AbstractQueryParam param) {
-        List<String> cludes = param.getCludes();
+        Set<String> cludes = param.getCludes();
         int type = param.getContainFeild();
         if (type == QueryParam.CONTAIN_NONE
                 || cludes == null
@@ -40,14 +41,14 @@ public class EasyOrmSqlBuilder {
         }
 
         String resultselectfield = "";
-        String tableAlias = null;
-        if(param instanceof QueryJoinParam){
-            tableAlias = ((QueryJoinParam) param).getMasterTableAlias();
-        }
-
         if(type == QueryParam.CONTAIN_NONE){
-            resultselectfield =  OrmSqlGenerator.createSelectField(resultMapId,tableAlias);
+            resultselectfield = "\t*\t";
+//            resultselectfield =  OrmSqlGenerator.createSelectField(resultMapId,tableAlias);
         }else {
+            String tableAlias = null;
+            if(param instanceof QueryJoinParam){
+                tableAlias = ((QueryJoinParam) param).getMasterTableAlias();
+            }
             resultselectfield =  OrmSqlGenerator.createSelectField(resultMapId,cludes, type,tableAlias);
         }
 
@@ -56,7 +57,6 @@ public class EasyOrmSqlBuilder {
                 if(resultselectfield.length() != 0){
                     resultselectfield +=",";
                 }
-
                 resultselectfield += String.join(" , ",((QueryJoinParam) param).getJoinCludes());
             }
         }
