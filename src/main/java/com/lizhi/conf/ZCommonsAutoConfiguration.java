@@ -1,7 +1,7 @@
 package com.lizhi.conf;
 
-import com.lizhi.orm.EasyOrmSqlBuilder;
-import com.lizhi.orm.OrmSqlGenerator;
+import com.lizhi.orm.SqlBuilder;
+import com.lizhi.orm.SqlGenerator;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,10 +22,10 @@ public class ZCommonsAutoConfiguration {
     private final static Logger logger = LoggerFactory.getLogger(ZCommonsAutoConfiguration.class);
 
     @Bean
-    @ConditionalOnMissingBean(EasyOrmSqlBuilder.class)// 注：当EasyOrmSqlBuilder 不存在的情况下，生效
-    public EasyOrmSqlBuilder init(SqlSessionFactory sqlSessionFactory) {
+    @ConditionalOnMissingBean(SqlBuilder.class)// 注：当EasyOrmSqlBuilder 不存在的情况下，生效
+    public SqlBuilder init(SqlSessionFactory sqlSessionFactory) {
         logger.info("ZCommonsAutoConfiguration  start!!!");
-        OrmSqlGenerator.processSqlSession(sqlSessionFactory);
-        return EasyOrmSqlBuilder.getInstance();
+        SqlGenerator.instance().init(sqlSessionFactory);
+        return SqlBuilder.getInstance();
     }
 }

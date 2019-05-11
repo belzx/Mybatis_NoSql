@@ -6,29 +6,29 @@
 <mapper namespace="BasicMapper">
     <!--通用查询条件-->
     <sql id="buildWhere">
-        ${@com.lizhi.orm.EasyOrmSqlBuilder@getInstance().buildWhere(resultMapId,#this['t_parameter'])}
+        ${@com.lizhi.orm.SqlBuilder@getInstance().buildWhere(resultMapId,#this['t_parameter'])}
     </sql>
 
     <!--生成查询字段-->
     <sql id="buildSelectField">
-        ${@com.lizhi.orm.EasyOrmSqlBuilder@getInstance().buildSelectFields(resultMapId,#this['t_parameter'])}
+        ${@com.lizhi.orm.SqlBuilder@getInstance().buildSelectFields(resultMapId,#this['t_parameter'])}
     </sql>
 
     <!--生成修改字段-->
     <sql id="buildUpdateField">
         <set>
-            ${@com.lizhi.orm.EasyOrmSqlBuilder@getInstance().buildUpdateFields(resultMapId,#this['t_parameter'])}
+            ${@com.lizhi.orm.SqlBuilder@getInstance().buildUpdateFields(resultMapId,#this['t_parameter'])}
         </set>
     </sql>
 
     <!--生成insert的字段 -->
     <sql id="buildInsertField">
-        ${@com.lizhi.orm.EasyOrmSqlBuilder@getInstance().buildInsertField(resultMapId)}
+        ${@com.lizhi.orm.SqlBuilder@getInstance().buildInsertField(resultMapId)}
     </sql>
 
     <!--生成insert的内容 -->
     <sql id="buildInsertContent">
-        ${@com.lizhi.orm.EasyOrmSqlBuilder@getInstance().buildInsertContent(resultMapId)}
+        ${@com.lizhi.orm.SqlBuilder@getInstance().buildInsertContent(resultMapId)}
     </sql>
 
 
@@ -50,24 +50,11 @@
         </trim>
     </sql>
 
-    <!--生成InsertSql-->
+    <!--生成BatchInsertSql-->
     <sql id="buildInsertSql">
         <trim>
-        insert into ${tableName} (<include refid="BasicMapper.buildInsertField"/>)
-        values
-            (<include refid="BasicMapper.buildInsertContent"/>)
-        </trim>
-    </sql>
-
-    <!--生成BatchInsertSql-->
-    <sql id="buildBatchInsertSql">
-        <trim>
-            insert into ${tableName}
-            (<include refid="BasicMapper.buildInsertField"/>)
-            values
-            <foreach collection="t_parameters" item="t_parameter" separator="," index="index">
-                (<include refid="BasicMapper.buildInsertContent"/>)
-            </foreach>
+            insert into ${tableName} (<include refid="BasicMapper.buildInsertField"/>)  values
+            <foreach collection="t_parameters" item="t_parameter" separator="," index="index"> (<include refid="BasicMapper.buildInsertContent"/>) </foreach>
         </trim>
     </sql>
 
@@ -76,7 +63,6 @@
         <trim>
             update ${tableName}
             <include refid="BasicMapper.buildUpdateField"/>
-            <include refid="BasicMapper.buildWhere"/>
         </trim>
     </sql>
 

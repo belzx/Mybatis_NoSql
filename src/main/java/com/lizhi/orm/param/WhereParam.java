@@ -9,7 +9,10 @@ import java.util.Map;
 /**
  * @Author https://github.com/lizhixiong1994
  */
-public class OParam<T> implements Cloneable, Param {
+public abstract class WhereParam<T> implements Cloneable, Param {
+    public static int QUERY_TYPE_DEFAULT = 0;
+    public static int QUERY_TYPE_BYPK = 1;
+    private int type = QUERY_TYPE_DEFAULT;
 
     /*
      * 参数 .保存where的参数
@@ -17,21 +20,21 @@ public class OParam<T> implements Cloneable, Param {
     private Map<String, Term> params = new HashMap<>();
 
     public T and(String column, Object value) {
-        if(value instanceof Collection){
+        if (value instanceof Collection) {
             return this.where(Term.Type.and, column, Term.TermType.in, value);
         }
         return this.where(Term.Type.and, column, Term.TermType.eq, value);
     }
 
     public T where(String column, Object value) {
-        if(value instanceof Collection){
+        if (value instanceof Collection) {
             return this.where(Term.Type.and, column, Term.TermType.in, value);
         }
         return this.where(Term.Type.and, column, Term.TermType.eq, value);
     }
 
     public T or(String column, Object value) {
-        if(value instanceof Collection){
+        if (value instanceof Collection) {
             return where(Term.Type.or, column, Term.TermType.in, value);
         }
         return where(Term.Type.or, column, Term.TermType.eq, value);
@@ -61,5 +64,18 @@ public class OParam<T> implements Cloneable, Param {
 
     public Map<String, Term> getParams() {
         return params;
+    }
+
+    public T whereByPk(Object pk) {
+        this.type = QUERY_TYPE_BYPK;
+        if(pk instanceof Collection){
+            return where(Term.Type.and,"ID", Term.TermType.in, pk);
+        }else {
+            return where("ID",pk);
+        }
+    }
+
+    public boolean isWhereByPk() {
+        return this.type == QUERY_TYPE_BYPK;
     }
 }
